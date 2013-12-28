@@ -1,0 +1,34 @@
+/* Copyright 2012-2013 Peter Goodman, all rights reserved. */
+
+#ifndef PJIT_MIR_OPERATOR_H_
+#define PJIT_MIR_OPERATOR_H_
+#endif  // PJIT_MIR_OPERATOR_H_
+
+// Arithmetic operations.
+PJIT_DECLARE_BINARY_OPERATOR(Add, +)
+PJIT_DECLARE_BINARY_OPERATOR(Subtract, -)
+PJIT_DECLARE_BINARY_OPERATOR(Multiply, *)
+PJIT_DECLARE_BINARY_OPERATOR(Divide, /)
+
+
+// Bitwise operations.
+PJIT_DECLARE_BINARY_OPERATOR(BitwiseXor, ^)
+PJIT_DECLARE_BINARY_OPERATOR(BitwiseOr, |)
+PJIT_DECLARE_BINARY_OPERATOR(BitwiseAnd, &)
+PJIT_DECLARE_UNARY_OPERATOR(BitwiseNot, ~)
+
+
+// Logical operations.
+PJIT_DECLARE_BINARY_OPERATOR(LogicalOr, ||)
+PJIT_DECLARE_BINARY_OPERATOR(LogicalAnd, &&)
+PJIT_DECLARE_UNARY_OPERATOR(LogicalNot, !)
+
+
+// Comparison operations.
+PJIT_DECLARE_BINARY_OPERATOR(CompareEqual, ==)
+PJIT_DECLARE_BINARY_OPERATOR(CompareNotEqual, !=)
+PJIT_DECLARE_BINARY_OPERATOR(CompareLessThan, <)
+PJIT_DECLARE_BINARY_OPERATOR(CompareLessThanOrEqual, <=)
+PJIT_DECLARE_BINARY_OPERATOR(CompareGreaterThan, >)
+PJIT_DECLARE_BINARY_OPERATOR(CompareGreaterThanOrEqual, >=)
+
