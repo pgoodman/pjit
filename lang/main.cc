@@ -27,9 +27,22 @@ int main(int argc_, const char **argv_) {
     PJIT_HIR_DECLARE(C, (const char *), arg);
     ASSIGN(C, arg, LOAD_MEMORY(C, argv));
     ASSIGN(C, argc, ADD(C, argc, 1));
+
   PJIT_HIR_ELSE(C)
-    PJIT_HIR_IF(C, COMPARE_NE(C, 0, 0))
-    PJIT_HIR_END_IF
+    PJIT_HIR_SWITCH(C, argc)
+      PJIT_HIR_CASE(C, 1)
+
+      PJIT_HIR_END_CASE
+      PJIT_HIR_CASE(C, 2)
+
+      PJIT_HIR_END_CASE
+      PJIT_HIR_CASE(C, 3)
+
+      PJIT_HIR_END_CASE
+      PJIT_HIR_CASE(C, 4)
+
+      PJIT_HIR_END_CASE
+    PJIT_HIR_END_SWITCH
   PJIT_HIR_END_IF
 
   pjit::Log(pjit::LogLevel::LogOutput, &C);

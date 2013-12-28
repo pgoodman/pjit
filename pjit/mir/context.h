@@ -17,17 +17,21 @@
 #include "pjit/base/type-traits.h"
 
 #include "pjit/mir/instruction.h"
-#include "pjit/mir/control-flow-graph.h"
-
+#include "pjit/mir/cfg/sequential.h"
+#include "pjit/mir/cfg/conditional.h"
+#include "pjit/mir/cfg/multi-way-branch.h"
 
 namespace pjit {
 
 namespace hir {
 class IfStatementBuilder;
 class ElseStatementBuilder;
+class SwitchStatementBuilder;
+class CaseStatementBuilder;
 }  // namespace hir
 
 namespace mir {
+
 
 // Represents a compilation "context" for the medium-level intermediate
 // representation. The MIR has a fairly direct correspondence to C and its
@@ -38,35 +42,7 @@ namespace mir {
 // MIR compilation contexts are garbage collected using a simple mark and sweep
 // collector, implemented inside the `Allocator`.
 class Context {
- private:
-  friend class hir::IfStatementBuilder;
-  friend class hir::ElseStatementBuilder;
-
-  friend class BasicBlock;
-  friend class SequentialControlFlowGraph;
-  friend class ConditionalControlFlowGraph;
-
-  unsigned next_symbol_id;
-
-  Allocator<Symbol> symbol_allocator;
-  Allocator<Instruction> instruction_allocator;
-  Allocator<SequentialControlFlowGraph> scfg_allocator;
-  Allocator<ConditionalControlFlowGraph> ccfg_allocator;
-
-  // The top-level control-flow graph to which all
-  SequentialControlFlowGraph entry;
-  SequentialControlFlowGraph exit;
-
-  // The current sequential control-flow graph to which instructions are added.
-  SequentialControlFlowGraph *current;
-
-  // The current HIR if-statement builder. When HIR is used, these are
-  // automatically arranged into a stack by being saved in the
-  // `IfStatementBuilder` constructor and restored in the destructor.
-  hir::IfStatementBuilder *if_builder;
-
  public:
-
   Context(void);
 
   Symbol *MakeSymbol(const TypeInfo *type);
@@ -97,6 +73,48 @@ class Context {
   void VisitPreOrder(ControlFlowGraphVisitor *visitor);
   void VisitPostOrder(ControlFlowGraphVisitor *visitor);
   void GarbageCollect(void);
+
+ private:
+  friend class hir::IfStatementBuilder;
+  friend class hir::ElseStatementBuilder;
+  friend class hir::SwitchStatementBuilder;
+  friend class hir::CaseStatementBuilder;
+
+  friend class BasicBlock;
+  friend class SequentialControlFlowGraph;
+  friend class ConditionalControlFlowGraph;
+
+  unsigned next_symbol_id;
+
+  // Very simple allocators for various kinds of MIR objects.
+  Allocator<Symbol> symbol_allocator;
+  Allocator<Instruction> instruction_allocator;
+  Allocator<SequentialControlFlowGraph> seq_allocator;
+  Allocator<ConditionalControlFlowGraph> cond_allocator;
+  Allocator<MultiWayBranchControlFlowGraph> mbr_allocator;
+  Allocator<MultiWayBranchArm> mbr_arm_allocator;
+
+  // The top-level control-flow graph to which all
+  SequentialControlFlowGraph entry;
+  SequentialControlFlowGraph exit;
+
+  // The current sequential control-flow graph to which instructions are added.
+  SequentialControlFlowGraph *current;
+
+  // The current HIR if-statement builder. When HIR is used, these are
+  // automatically arranged into a stack by being saved in the
+  // `IfStatementBuilder` constructor and restored in the destructor.
+  hir::IfStatementBuilder *if_builder;
+
+  // The current HIR switch-statement builder.
+  hir::SwitchStatementBuilder *mbr_builder;
+
+  // Link a successor into the CFG.
+  void LinkSuccessor(SequentialControlFlowGraph *successor);
+
+  // Link the new current CFG into the context.
+  void LinkCurrent(SequentialControlFlowGraph *new_current,
+                   ControlFlowGraph *linked_successor);
 };
 
 }  // namespace mir

@@ -20,7 +20,12 @@ PJIT_OBJS += $(PJIT_BIN_DIR)/pjit/base/type-info.o
 PJIT_OBJS += $(PJIT_BIN_DIR)/pjit/base/allocate.o
 PJIT_OBJS += $(PJIT_BIN_DIR)/pjit/base/logging.o
 PJIT_OBJS += $(PJIT_BIN_DIR)/pjit/mir/context.o
-PJIT_OBJS += $(PJIT_BIN_DIR)/pjit/mir/control-flow-graph.o
+PJIT_OBJS += $(PJIT_BIN_DIR)/pjit/mir/cfg/control-flow-graph.o
+PJIT_OBJS += $(PJIT_BIN_DIR)/pjit/mir/cfg/finder.o
+PJIT_OBJS += $(PJIT_BIN_DIR)/pjit/mir/cfg/basic-block.o
+PJIT_OBJS += $(PJIT_BIN_DIR)/pjit/mir/cfg/sequential.o
+PJIT_OBJS += $(PJIT_BIN_DIR)/pjit/mir/cfg/conditional.o
+PJIT_OBJS += $(PJIT_BIN_DIR)/pjit/mir/cfg/multi-way-branch.o
 PJIT_OBJS += $(PJIT_BIN_DIR)/pjit/mir/logging.o
 PJIT_OBJS += $(PJIT_BIN_DIR)/pjit/hir/hir-to-mir.o
 
@@ -62,6 +67,8 @@ lint:
 	$(PJIT_LINT) $(wildcard $(PJIT_SRC_DIR)/pjit/hir/*.cc)
 	$(PJIT_LINT) $(wildcard $(PJIT_SRC_DIR)/pjit/mir/*.h)
 	$(PJIT_LINT) $(wildcard $(PJIT_SRC_DIR)/pjit/mir/*.cc)
+	$(PJIT_LINT) $(wildcard $(PJIT_SRC_DIR)/pjit/mir/cfg/*.h)
+	$(PJIT_LINT) $(wildcard $(PJIT_SRC_DIR)/pjit/mir/cfg/*.cc)
 	#$(PJIT_LINT) $(wildcard $(PJIT_SRC_DIR)/pjit/*.h)
 	#$(PJIT_LINT) $(wildcard $(PJIT_SRC_DIR)/pjit/*.cc)
 

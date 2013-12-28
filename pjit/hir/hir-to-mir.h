@@ -115,7 +115,7 @@ template <
   typename T,
   typename EnableIf<StaticTypeInfoFactory<T>::IS_DEFINED, int>::Type=0
 >
-inline const Symbol *GetRValue(mir::Context &context, T &val) {
+inline const Symbol *GetRValue(mir::Context &context, T val) {
   const TypeInfo *type(GetTypeInfoForType<T>());
   const Symbol *dest(context.MakeSymbol(type));
   context.EmitInstruction(
@@ -132,7 +132,7 @@ inline const Symbol *GetRValue(mir::Context &context, T &val) {
   pjit::hir::SymbolicVariable<PJIT_HIR_DECLARED_TYPE type> name( \
     context.MakeSymbol( \
       pjit::GetTypeInfoForType<PJIT_HIR_DECLARED_TYPE type>(), \
-      #name));
+      PJIT_TO_STRING(name)));
 
 
 #define PJIT_DECLARE_BINARY_OPERATOR(name, op) \
@@ -314,7 +314,6 @@ class IfStatementBuilder {
   }
 
  private:
-
   friend class ElseStatementBuilder;
 
   mir::Context *context;
@@ -329,25 +328,97 @@ class IfStatementBuilder {
 };
 
 
-#define PJIT_HIR_IF_ID PJIT_CAT(pjit_hir_if_, __LINE__)
+#define PJIT_HIR_SYM_ID PJIT_CAT(pjit_hir_sym_, __LINE__)
 
 
 #define PJIT_HIR_IF(context, cond) \
-    { \
-      pjit::hir::IfStatementBuilder PJIT_HIR_IF_ID (context); \
-      PJIT_HIR_IF_ID.Condition(cond); \
-      {
+  { \
+    pjit::hir::IfStatementBuilder PJIT_HIR_SYM_ID (context); \
+    PJIT_HIR_SYM_ID.Condition(cond); \
+    {
 
 
 #define PJIT_HIR_ELSE(context) \
-      } \
-      pjit::hir::ElseStatementBuilder PJIT_HIR_IF_ID(context); \
-      {
+    } \
+    pjit::hir::ElseStatementBuilder PJIT_HIR_SYM_ID(context); \
+    PJIT_UNUSED(PJIT_HIR_SYM_ID); \
+    {
 
 
 #define PJIT_HIR_END_IF \
-      } \
-    }
+    } \
+  }
+
+
+// Interacts with the MIR context to construct CASE statements.
+//
+// Note: This assumes that the ELSE statement is being used correctly (i.e.
+//       within an IF statement.
+class CaseStatementBuilder {
+ public:
+  explicit CaseStatementBuilder(mir::Context &context, const Symbol *symbol);
+  ~CaseStatementBuilder(void);
+
+ private:
+  mir::Context * const context;
+
+  CaseStatementBuilder(void) = delete;
+
+  PJIT_DISALLOW_COPY_AND_ASSIGN(CaseStatementBuilder);
+};
+
+
+// Interacts with the MIR context to construct SWITCH statements.
+class SwitchStatementBuilder {
+ public:
+  explicit SwitchStatementBuilder(mir::Context &context_);
+  ~SwitchStatementBuilder(void);
+
+  // The type is already a boolean, no conversion is necessary.
+  template <typename T>
+  void Condition(T &&val) {
+    mbr->conditional_value = GetRValue(*context, val);
+
+    // Ensure that emitting instructions without a CASE statement results in
+    // a fault.
+    context->current = nullptr;
+  }
+
+ private:
+  friend class CaseStatementBuilder;
+
+  mir::Context *context;
+  mir::MultiWayBranchControlFlowGraph *mbr;
+  mir::SequentialControlFlowGraph *successor;
+
+  SwitchStatementBuilder *saved_mbr_builder;
+
+  SwitchStatementBuilder(void) = delete;
+
+  PJIT_DISALLOW_COPY_AND_ASSIGN(SwitchStatementBuilder);
+};
+
+
+#define PJIT_HIR_SWITCH(context, cond) \
+  { \
+    pjit::hir::SwitchStatementBuilder PJIT_HIR_SYM_ID (context); \
+    PJIT_HIR_SYM_ID.Condition(cond); \
+
+
+#define PJIT_HIR_CASE(context, value) \
+  { \
+    pjit::hir::CaseStatementBuilder PJIT_HIR_SYM_ID( \
+        (context), (context).MakeSymbol(value)); \
+    PJIT_UNUSED(PJIT_HIR_SYM_ID); \
+    {
+
+#define PJIT_HIR_END_CASE \
+    } \
+  }
+
+
+#define PJIT_HIR_END_SWITCH \
+  }
 
 
 }  // namespace hir

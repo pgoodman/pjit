@@ -14,11 +14,12 @@ namespace mir {
 
 
 Context::Context(void)
-    : next_symbol_id(0),
+    : next_symbol_id(1),
       entry(this, nullptr),
       exit(this, &entry),
       current(&entry),
-      if_builder(nullptr) {
+      if_builder(nullptr),
+      mbr_builder(nullptr) {
   entry.successor = &exit;
 }
 
@@ -66,6 +67,27 @@ void Context::VisitPostOrder(ControlFlowGraphVisitor *visitor) {
   visitor->VisitPostOrder(&entry);
 }
 
+
+// Link a successor into the CFG.
+void Context::LinkSuccessor(SequentialControlFlowGraph *successor) {
+  if (current) {
+    successor->successor = current->successor;
+    if (successor->successor &&
+        successor->successor->parent == current) {
+      successor->successor->parent = successor;
+    }
+  }
+}
+
+
+// Link the new current CFG into the context.
+void Context::LinkCurrent(SequentialControlFlowGraph *new_current,
+                          ControlFlowGraph *linked_successor) {
+  if (current) {
+    current->successor = linked_successor;
+  }
+  current = new_current;
+}
 
 }  // namespace mir
 }  // namespace pjit

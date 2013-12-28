@@ -12,7 +12,7 @@
 
 #include "pjit/mir/logging.h"
 #include "pjit/mir/context.h"
-#include "pjit/mir/control-flow-graph.h"
+#include "pjit/mir/cfg/control-flow-graph.h"
 
 namespace pjit {
 namespace mir {
