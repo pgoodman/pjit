@@ -144,10 +144,12 @@ inline const Symbol *GetRValue(mir::Context &context, T &val) {
     typedef decltype(LeftType() op RightType()) RefOutputType; \
     typedef typename RemoveReference<RefOutputType>::Type OutputType; \
     const TypeInfo *output_type(GetTypeInfoForType<OutputType>()); \
-    const Symbol *left_conv(context.EmitConvertType( \
-        output_type, GetRValue(context, left))); \
-    const Symbol *right_conv(context.EmitConvertType( \
-        output_type, GetRValue(context, right))); \
+    const Symbol *left_conv(GetRValue(context, left)); \
+    const Symbol *right_conv(GetRValue(context, right)); \
+    if (!TypesAreEqual<bool, OutputType>::RESULT) { \
+      left_conv = context.EmitConvertType(output_type, left_conv); \
+      right_conv = context.EmitConvertType(output_type, right_conv); \
+    } \
     const Symbol *output_value(context.MakeSymbol(output_type)); \
     context.EmitInstruction( \
         mir::Operation::kOp ## name, {output_value, left_conv, right_conv}); \
@@ -169,8 +171,10 @@ inline const Symbol *GetRValue(mir::Context &context, T &val) {
     typedef decltype(op RightType()) RefOutputType; \
     typedef typename RemoveReference<RefOutputType>::Type OutputType; \
     const TypeInfo *output_type(GetTypeInfoForType<OutputType>()); \
-    const Symbol *right_conv(context.EmitConvertType( \
-        output_type, GetRValue(context, right))); \
+    const Symbol *right_conv(GetRValue(context, right)); \
+    if (!TypesAreEqual<bool, OutputType>::RESULT) { \
+      context.EmitConvertType(output_type, right_conv); \
+    } \
     const Symbol *output_value(context.MakeSymbol(output_type)); \
     context.EmitInstruction( \
         mir::Operation::kOp ## name, {output_value, right_conv}); \

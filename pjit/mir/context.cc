@@ -23,12 +23,6 @@ Context::Context(void)
 }
 
 
-void Context::EmitInstruction(Operation op,
-                              std::initializer_list<const Symbol *> args) {
-  current->Append(instruction_allocator.Allocate(op, args));
-}
-
-
 Symbol *Context::MakeSymbol(const TypeInfo *type) {
   return symbol_allocator.Allocate(type, "", next_symbol_id++);
 }
@@ -42,6 +36,12 @@ Symbol *Context::MakeSymbol(const TypeInfo *type, const char *name) {
 
 Symbol *Context::CopySymbol(const Symbol *that) {
   return symbol_allocator.Allocate(that->type, that->value.name, that->id);
+}
+
+
+void Context::EmitInstruction(Operation op,
+                              std::initializer_list<const Symbol *> args) {
+  current->Append(instruction_allocator.Allocate(op, args));
 }
 
 

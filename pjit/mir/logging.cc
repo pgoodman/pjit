@@ -225,7 +225,7 @@ int Log(LogLevel level, const mir::Instruction *in) {
       goto two_operands;
     }
     default: {
-      num_logged_bytes += Log(level, "UNKNOWN INSTRUCTION");
+      num_logged_bytes += Log(level, "???");
       break;
     }
   }
@@ -233,12 +233,13 @@ int Log(LogLevel level, const mir::Instruction *in) {
   two_operands:
   num_logged_bytes += Log(level, in->operands[0], " <- ");
   num_logged_bytes += Log(level, in->operands[1], ";");
-
   goto done;
+
   three_operands:
   num_logged_bytes += Log(level, in->operands[0], " <- ");
   num_logged_bytes += Log(level, in->operands[1], ", ");
   num_logged_bytes += Log(level, in->operands[2], ";");
+
   done:
   return num_logged_bytes;
 }
