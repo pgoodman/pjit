@@ -20,18 +20,15 @@ int main(int argc_, const char **argv_) {
   PJIT_HIR_DECLARE(C, (int), argc);
   PJIT_HIR_DECLARE(C, (const char **), argv);
 
-  Assign(C, argc, argc_);
-  Assign(C, argv, argv_);
+  ASSIGN(C, argc, argc_);
+  ASSIGN(C, argv, argv_);
 
-  // TODO(pag): Not all instructions (e.g. LoadImmediate) are showing up in the
-  //            output!!
-
-  PJIT_HIR_IF(C, CompareGreaterThan(C, argc, 0))
+  PJIT_HIR_IF(C, COMPARE_GT(C, argc, 0))
     PJIT_HIR_DECLARE(C, (const char *), arg);
-    Assign(C, arg, LoadMemory(C, argv));
-    Assign(C, argc, Add(C, argc, 1));
+    ASSIGN(C, arg, LOAD_MEMORY(C, argv));
+    ASSIGN(C, argc, ADD(C, argc, 1));
   PJIT_HIR_ELSE(C)
-    PJIT_HIR_IF(C, CompareNotEqual(C, 0, 0))
+    PJIT_HIR_IF(C, COMPARE_NE(C, 0, 0))
     PJIT_HIR_END_IF
   PJIT_HIR_END_IF
 

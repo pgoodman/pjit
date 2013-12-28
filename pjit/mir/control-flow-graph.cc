@@ -32,8 +32,9 @@ void BasicBlock::Append(Instruction *in) {
     last->next = in;
   } else {
     first = in;
-    last = in;
   }
+
+  last = in;
 }
 
 
@@ -44,9 +45,10 @@ void BasicBlock::Prepend(Instruction *in) {
   if (first) {
     first->prev = in;
   } else {
-    first = in;
     last = in;
   }
+
+  first = in;
 }
 
 

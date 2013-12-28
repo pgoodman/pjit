@@ -14,6 +14,7 @@
 namespace pjit {
 
 struct TypeInfo;
+class Symbol;
 
 namespace mir {
 class Context;
@@ -23,6 +24,11 @@ class Instruction;
 
 // Logs out the name of a type.
 int Log(LogLevel level, const TypeInfo *type);
+
+
+// Log out a symbol, which might have a name/number, or might be an immediate.
+// This also logs out the symbols type.
+int Log(LogLevel level, const Symbol *sym);
 
 
 // Logs out the control-flow graph represented by a MIR context as a DOT

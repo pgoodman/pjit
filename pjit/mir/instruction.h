@@ -23,18 +23,18 @@ namespace mir {
 
 enum class Operation {
 #define PJIT_DECLARE_BINARY_OPERATOR(opcode, _) \
-  kOp ## opcode,
+  PJIT_CAT(OP_, opcode),
 #define PJIT_DECLARE_UNARY_OPERATOR(opcode, _) \
-  kOp ## opcode,
+  PJIT_CAT(OP_, opcode),
 #include "pjit/mir/operator.h"
 #undef PJIT_DECLARE_BINARY_OPERATOR
 #undef PJIT_DECLARE_UNARY_OPERATOR
-  kOpLoadMemory,
-  kOpStoreMemory,
-  kOpConvertType,
-  kOpLoadImmediate,
-  kOpAssign,
-  kOpLast
+  OP_LOAD_MEMORY,
+  OP_STORE_MEMORY,
+  OP_CONVERT_TYPE,
+  OP_LOAD_IMMEDIATE,
+  OP_ASSIGN,
+  OP_NOP
 };
 
 

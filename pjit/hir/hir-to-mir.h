@@ -79,7 +79,7 @@ inline const Symbol *GetRValue(mir::Context &context,
                                const SymbolicValueReference<T> value) {
   const Symbol *dest(context.MakeSymbol(GetTypeInfoForType<T>()));
   const Symbol *source(value.GetSymbol());
-  context.EmitInstruction(mir::Operation::kOpLoadMemory, {dest, source});
+  context.EmitInstruction(mir::Operation::OP_LOAD_MEMORY, {dest, source});
   return dest;
 }
 
@@ -96,15 +96,21 @@ inline const Symbol *GetRValue(mir::Context &, const SymbolicVariable<T> &var) {
 }
 
 
+// Getting an L-value for a constant is not well-defined. This should not be
+// calls.
 template <
   typename T,
   typename EnableIf<StaticTypeInfoFactory<T>::IS_DEFINED, int>::Type=0
 >
 inline const Symbol *GetLValue(T &) {
+  // TODO(pag): Assert that this isn't invoked.
   return nullptr;
 }
 
 
+// Get a symbol for a constant. We only allow constants for known types to be
+// loaded as immediates. In practice, only integral, floating point, and pointer
+// types should be used.
 template <
   typename T,
   typename EnableIf<StaticTypeInfoFactory<T>::IS_DEFINED, int>::Type=0
@@ -113,7 +119,7 @@ inline const Symbol *GetRValue(mir::Context &context, T &val) {
   const TypeInfo *type(GetTypeInfoForType<T>());
   const Symbol *dest(context.MakeSymbol(type));
   context.EmitInstruction(
-      mir::Operation::kOpLoadImmediate,
+      mir::Operation::OP_LOAD_IMMEDIATE,
       {dest, context.MakeSymbol(val)});
   return dest;
 }
@@ -152,7 +158,8 @@ inline const Symbol *GetRValue(mir::Context &context, T &val) {
     } \
     const Symbol *output_value(context.MakeSymbol(output_type)); \
     context.EmitInstruction( \
-        mir::Operation::kOp ## name, {output_value, left_conv, right_conv}); \
+        mir::Operation::PJIT_CAT(OP_, name), \
+        {output_value, left_conv, right_conv}); \
     return SymbolicValue<OutputType>(output_value); \
   }
 
@@ -177,7 +184,7 @@ inline const Symbol *GetRValue(mir::Context &context, T &val) {
     } \
     const Symbol *output_value(context.MakeSymbol(output_type)); \
     context.EmitInstruction( \
-        mir::Operation::kOp ## name, {output_value, right_conv}); \
+        mir::Operation::PJIT_CAT(OP_, name), {output_value, right_conv}); \
     return SymbolicValue<OutputType>(output_value); \
   }
 
@@ -187,29 +194,41 @@ inline const Symbol *GetRValue(mir::Context &context, T &val) {
 #undef PJIT_DECLARE_UNARY_OPERATOR
 
 
+// Type trait for detecting whether or not a type is a symbolic value
+// reference. Distinguishing between symbolic value refereces, variables, and
+// plain-old values is important when performing a memory store.
 template <typename T>
-inline bool IsSymbolicValueReference(const T &) {
-  return false;
-}
+struct IsSymbolicValueReference {
+  enum {
+    RESULT = false
+  };
+};
 
 
 template <typename T>
-inline bool IsSymbolicValueReference(const SymbolicValueReference<T> &) {
-  return true;
-}
+struct IsSymbolicValueReference<SymbolicValueReference<T>> {
+  enum {
+    RESULT = true
+  };
+};
 
 
+// Emit an instruction that loads a value from memory. If we're tring to load
+// a symbolic value reference, then that means the input was the result of
+// another `LOAD_MEMORY` call, and so we rightly resolve its r-value (by
+// internally emitting a `OP_LOAD_MEMORY` instruction. Otherwise, we just get
+// the symbol's l-value.
 template <typename T>
 SymbolicValueReference<
   typename RemoveReference<
     decltype(*typename TypeOfSymbolicValue<T>::Type())
   >::Type
 >
-inline LoadMemory(mir::Context &context, T &&right) {
+inline LOAD_MEMORY(mir::Context &context, T &&right) {
   typedef typename TypeOfSymbolicValue<T>::Type RightType;
   typedef decltype(*RightType()) RefOutputType;
   typedef typename RemoveReference<RefOutputType>::Type OutputType;
-  if (IsSymbolicValueReference(right)) {
+  if (IsSymbolicValueReference<T>::RESULT) {
     return SymbolicValueReference<OutputType>(GetRValue(context, right));
   } else {
     return SymbolicValueReference<OutputType>(GetLValue(right));
@@ -217,32 +236,39 @@ inline LoadMemory(mir::Context &context, T &&right) {
 }
 
 
-// Assign one value to another.
+// Assign one value to another. If the left-hand side of the assignment is a
+// dereferenced address (symbolic value reference), then we emit a
+// `OP_STORE_MEMORY` instruction, otherwise we use a plain-old `OP_ASSIGN`
+// instruction.
 template <typename L, typename R>
 SymbolicValue<typename TypeOfSymbolicValue<L>::Type>
-inline Assign(mir::Context &context, L &&left, R &&right) {
+inline ASSIGN(mir::Context &context, L &&left, R &&right) {
   typedef typename TypeOfSymbolicValue<L>::Type RefOutputType;
   typedef typename RemoveReference<RefOutputType>::Type OutputType;
-  const TypeInfo *output_type_info(GetTypeInfoForType<OutputType>());
 
+  const TypeInfo *output_type_info(GetTypeInfoForType<OutputType>());
   const Symbol *right_conv(context.EmitConvertType(
       output_type_info, GetRValue(context, right)));
 
   // Storing through a memory reference.
-  if (IsSymbolicValueReference(left)) {
+  if (IsSymbolicValueReference<L>::RESULT) {
     context.EmitInstruction(
-        mir::Operation::kOpStoreMemory, {GetLValue(left), right_conv});
+        mir::Operation::OP_STORE_MEMORY, {GetLValue(left), right_conv});
 
   // Assigning the value of an abstract register.
   } else {
     context.EmitInstruction(
-        mir::Operation::kOpAssign, {GetLValue(left), right_conv});
+        mir::Operation::OP_ASSIGN, {GetLValue(left), right_conv});
   }
 
   return SymbolicValue<OutputType>(right_conv);
 }
 
 
+// Interacts with the MIR context to construct ELSE statements.
+//
+// Note: This assumes that the ELSE statement is being used correctly (i.e.
+//       within an IF statement.
 class ElseStatementBuilder {
  public:
   explicit ElseStatementBuilder(mir::Context &context);
@@ -254,6 +280,7 @@ class ElseStatementBuilder {
 };
 
 
+// Interacts with the MIR context to construct IF statements.
 class IfStatementBuilder {
  public:
   explicit IfStatementBuilder(mir::Context &context_);
@@ -309,7 +336,7 @@ class IfStatementBuilder {
     { \
       pjit::hir::IfStatementBuilder PJIT_HIR_IF_ID (context); \
       PJIT_HIR_IF_ID.Condition(cond); \
-      { \
+      {
 
 
 #define PJIT_HIR_ELSE(context) \

@@ -65,9 +65,7 @@ class LoggerVisitor : public ControlFlowGraphVisitor {
 
     for (Instruction *in(bb->first); nullptr != in; in = in->next) {
       num_logged_bytes += Log(level, in);
-      if (in->next) {
-        num_logged_bytes += Log(level, "\\l");
-      }
+      num_logged_bytes += Log(level, "\\l");
     }
     num_logged_bytes += Log(level, "\"];\n");
 
@@ -160,9 +158,8 @@ int Log(LogLevel level, const TypeInfo *type) {
 
 
 // Log out a symbol, which might have a name/number, or might be an immediate.
-// This also logs out the symbols type, as well as a suffix to log after the
-// symbol.
-static int Log(LogLevel level, const Symbol *sym, const char *suffix) {
+// This also logs out the symbols type.
+int Log(LogLevel level, const Symbol *sym) {
   if (!sym) {
     return Log(level, "???");
   }
@@ -170,10 +167,10 @@ static int Log(LogLevel level, const Symbol *sym, const char *suffix) {
   int num_logged_bytes(0);
   num_logged_bytes += Log(level, sym->type);
   if (!sym->id) {  // Constant / immediate literal.
-    return Log(level, ":C%s", suffix); // TODO(pag): Implement this.
+    return Log(level, ":C"); // TODO(pag): Implement this.
   } else {
     num_logged_bytes += Log(
-        level, ":%s$%u%s", sym->value.name, sym->id, suffix);
+        level, ":%s$%u", sym->value.name, sym->id);
   }
 
   return num_logged_bytes;
@@ -187,58 +184,62 @@ int Log(LogLevel level, const mir::Instruction *in) {
   }
 
   int num_logged_bytes(0);
+  const char *op_symbol(", ");
 
   switch (in->operation) {
-#define PJIT_DECLARE_BINARY_OPERATOR(opcode, _) \
-  case mir::Operation::PJIT_CAT(kOp, opcode): { \
-    num_logged_bytes += Log(level, PJIT_TO_STRING(opcode) " "); \
+#define PJIT_DECLARE_BINARY_OPERATOR(opcode, op) \
+  case mir::Operation::PJIT_CAT(OP_, opcode): { \
+    op_symbol = " " PJIT_TO_STRING(op) " "; \
     goto three_operands; \
   }
 #define PJIT_DECLARE_UNARY_OPERATOR(opcode, _) \
-  case mir::Operation::PJIT_CAT(kOp, opcode): { \
-    num_logged_bytes += Log(level, PJIT_TO_STRING(opcode) " "); \
-    num_logged_bytes += Log(level, in->operands[0], " <- "); \
-    num_logged_bytes += Log(level, in->operands[1], ";"); \
-    break; \
+  case mir::Operation::PJIT_CAT(OP_, opcode): { \
+    op_symbol = PJIT_TO_STRING(op); \
+    goto two_operands; \
   }
 #include "pjit/mir/operator.h"
 #undef PJIT_DECLARE_BINARY_OPERATOR
 #undef PJIT_DECLARE_UNARY_OPERATOR
-    case mir::Operation::kOpLoadMemory: {
-      num_logged_bytes += Log(level, "LoadMemory ");
+    case mir::Operation::OP_LOAD_MEMORY: {
+      op_symbol = " load ";
       goto two_operands;
     }
-    case mir::Operation::kOpStoreMemory: {
-      num_logged_bytes += Log(level, "StoreMemory ");
+    case mir::Operation::OP_STORE_MEMORY: {
+      op_symbol = " store ";
       goto two_operands;
     }
-    case mir::Operation::kOpConvertType: {
-      num_logged_bytes += Log(level, "ConvertType ");
+    case mir::Operation::OP_CONVERT_TYPE: {
+      op_symbol = " convert ";
       goto two_operands;
     }
-    case mir::Operation::kOpLoadImmediate: {
-      num_logged_bytes += Log(level, "LoadImmediate ");
+    case mir::Operation::OP_LOAD_IMMEDIATE: {
+      op_symbol = " load ";
       goto two_operands;
     }
-    case mir::Operation::kOpAssign: {
-      num_logged_bytes += Log(level, "Assign ");
+    case mir::Operation::OP_ASSIGN: {
+      op_symbol = " = ";
       goto two_operands;
     }
     default: {
       num_logged_bytes += Log(level, "???");
-      break;
+      goto done;
     }
   }
 
   two_operands:
-  num_logged_bytes += Log(level, in->operands[0], " <- ");
-  num_logged_bytes += Log(level, in->operands[1], ";");
+  num_logged_bytes += Log(level, in->operands[0]);
+  num_logged_bytes += Log(level, "%s", op_symbol);
+  num_logged_bytes += Log(level, in->operands[1]);
+  num_logged_bytes += Log(level, ";");
   goto done;
 
   three_operands:
-  num_logged_bytes += Log(level, in->operands[0], " <- ");
-  num_logged_bytes += Log(level, in->operands[1], ", ");
-  num_logged_bytes += Log(level, in->operands[2], ";");
+  num_logged_bytes += Log(level, in->operands[0]);
+  num_logged_bytes += Log(level, " = ");
+  num_logged_bytes += Log(level, in->operands[1]);
+  num_logged_bytes += Log(level, "%s", op_symbol);
+  num_logged_bytes += Log(level, in->operands[2]);
+  num_logged_bytes += Log(level, ";");
 
   done:
   return num_logged_bytes;

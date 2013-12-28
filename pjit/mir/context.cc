@@ -52,7 +52,7 @@ const Symbol *Context::EmitConvertType(const TypeInfo *to_type,
   }
 
   const Symbol *dest(MakeSymbol(to_type));
-  EmitInstruction(Operation::kOpConvertType, {dest, from_value});
+  EmitInstruction(Operation::OP_CONVERT_TYPE, {dest, from_value});
   return dest;
 }
 
