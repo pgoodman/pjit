@@ -86,7 +86,7 @@ void SequentialControlFlowGraph::VisitPredecessor(ControlFlowGraph *search,
                                                   BasicBlockVisitor *visitor) {
   if (successor == search) {
     visitor->Visit(&(bb));
-  } else {
+  } else if (successor) {
     successor->VisitPredecessor(search, visitor);
   }
 }

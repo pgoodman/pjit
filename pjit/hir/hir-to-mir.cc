@@ -11,6 +11,7 @@
 namespace pjit {
 namespace hir {
 
+
 ElseStatementBuilder::ElseStatementBuilder(mir::Context &context) {
   context.current = &(context.if_builder->conditional->if_false);
 }
@@ -20,8 +21,7 @@ IfStatementBuilder::IfStatementBuilder(mir::Context &context_)
     : context(&context_),
       conditional(nullptr),
       successor(nullptr),
-      saved_if_builder(context->if_builder)
-{
+      saved_if_builder(context->if_builder) {
   // Make and link a new successor in-between the current CFG's old successor
   // and our conditional CFG.
   successor = context->seq_allocator.Allocate(context, context->current);
@@ -47,14 +47,19 @@ IfStatementBuilder::~IfStatementBuilder(void) {
 CaseStatementBuilder::CaseStatementBuilder(mir::Context &context_,
                                            const Symbol *symbol)
     : context(&context_) {
+  mir::MultiWayBranchControlFlowGraph *mbr(context->mbr_builder->mbr);
   mir::MultiWayBranchArm *arm(context->mbr_arm_allocator.Allocate(
       context,
-      context->mbr_builder->mbr,  // Parent node of the CASE.
+      mbr,  // Parent node of the CASE.
       symbol,  // Symbol that must match the switch `condition_value`.
-      context->mbr_builder->mbr->arms,  // Next arm; add to head of `arms` list.
-      context->mbr_builder->mbr->successor));  // Fall-through successor.
+      mbr->arms,  // Next arm; add to head of `arms` list.
+      mbr->successor));  // Fall-through successor.
 
-  context->mbr_builder->mbr->arms = arm;
+  if (!symbol) {
+    mbr->default_arm = arm;
+  }
+
+  mbr->arms = arm;
   context->current = &(arm->if_true);
 }
 
@@ -70,8 +75,7 @@ SwitchStatementBuilder::SwitchStatementBuilder(mir::Context &context_)
     : context(&context_),
       mbr(nullptr),
       successor(nullptr),
-      saved_mbr_builder(context->mbr_builder)
-{
+      saved_mbr_builder(context->mbr_builder) {
   // Make and link a new successor in-between the current CFG's old successor
   // and our conditional CFG.
   successor = context->seq_allocator.Allocate(context, context->current);
@@ -89,6 +93,30 @@ SwitchStatementBuilder::SwitchStatementBuilder(mir::Context &context_)
 SwitchStatementBuilder::~SwitchStatementBuilder(void) {
   context->current = successor;
   context->mbr_builder = saved_mbr_builder;
+}
+
+
+LoopStatementBuilder::LoopStatementBuilder(mir::Context &context_)
+    : context(&context_),
+      loop(nullptr),
+      successor(nullptr) {
+  // Make and link a new successor in-between the current CFG's old successor
+  // and our conditional CFG.
+  successor = context->seq_allocator.Allocate(context, context->current);
+  context->LinkSuccessor(successor);
+
+  // Make and link a new conditional CFG into the successor chain.
+  loop = context->loop_allocator.Allocate(
+      context,
+      context->current,
+      successor);
+
+  context->LinkCurrent(&(loop->init), loop);
+}
+
+
+LoopStatementBuilder::~LoopStatementBuilder(void) {
+  context->current = successor;
 }
 
 }  // namespace hir

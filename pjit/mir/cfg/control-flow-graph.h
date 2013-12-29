@@ -26,6 +26,7 @@ class BasicBlock;
 class SequentialControlFlowGraph;
 class ConditionalControlFlowGraph;
 class MultiWayBranchControlFlowGraph;
+class LoopControlFlowGraph;
 class ControlFlowGraphVisitor;
 class BasicBlockVisitor;
 class BasicBlockFinder;
@@ -94,6 +95,7 @@ class ControlFlowGraphVisitor {
   PJIT_DECLARE_CONTROL_FLOW_GRAPH_VISITORS(SequentialControlFlowGraph);
   PJIT_DECLARE_CONTROL_FLOW_GRAPH_VISITORS(ConditionalControlFlowGraph);
   PJIT_DECLARE_CONTROL_FLOW_GRAPH_VISITORS(MultiWayBranchControlFlowGraph);
+  PJIT_DECLARE_CONTROL_FLOW_GRAPH_VISITORS(LoopControlFlowGraph);
 
   virtual void VisitPreOrder(BasicBlock *) {}
   virtual void VisitPostOrder(BasicBlock *) {}

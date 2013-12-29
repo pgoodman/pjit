@@ -28,20 +28,30 @@ int main(int argc_, const char **argv_) {
     ASSIGN(C, arg, LOAD_MEMORY(C, argv));
     ASSIGN(C, argc, ADD(C, argc, 1));
 
+    PJIT_HIR_FOR(C,
+       (PJIT_HIR_DECLARE(C, (int), i);
+        ASSIGN(C, i, 0)),
+       (COMPARE_LT(C, i, 10)),
+       (ASSIGN(C, i, ADD(C, i, 1))))
+
+
+
+    PJIT_HIR_END_FOR
+
   PJIT_HIR_ELSE(C)
     PJIT_HIR_SWITCH(C, argc)
       PJIT_HIR_CASE(C, 1)
-
       PJIT_HIR_END_CASE
+
       PJIT_HIR_CASE(C, 2)
-
       PJIT_HIR_END_CASE
+
       PJIT_HIR_CASE(C, 3)
-
       PJIT_HIR_END_CASE
+
       PJIT_HIR_CASE(C, 4)
-
       PJIT_HIR_END_CASE
+
     PJIT_HIR_END_SWITCH
   PJIT_HIR_END_IF
 

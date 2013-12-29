@@ -25,6 +25,7 @@ class MultiWayBranchArm;
 class MultiWayBranchControlFlowGraph;
 class MultiWayFirstBasicBlockFinder;
 class MultiWayPredecessorBasicBlockFinder;
+class LoopControlFlowGraph;
 
 
 // Represents a straight-line sequence of code (a basic block), followed by
@@ -53,6 +54,7 @@ class SequentialControlFlowGraph : public ControlFlowGraph {
   friend class hir::IfStatementBuilder;
   friend class Context;
   friend class ConditionalControlFlowGraph;
+  friend class LoopControlFlowGraph;
   friend class MultiWayBranchArm;
   friend class MultiWayBranchControlFlowGraph;
   friend class MultiWayFirstBasicBlockFinder;

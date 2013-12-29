@@ -40,4 +40,7 @@
 
 #define PJIT_UNUSED(a) (void) (a)
 
+
+#define PJIT_UNPACK(...) __VA_ARGS__
+
 #endif  // PJIT_BASE_BASE_H_

@@ -20,6 +20,7 @@
 #include "pjit/mir/cfg/sequential.h"
 #include "pjit/mir/cfg/conditional.h"
 #include "pjit/mir/cfg/multi-way-branch.h"
+#include "pjit/mir/cfg/loop.h"
 
 namespace pjit {
 
@@ -28,6 +29,7 @@ class IfStatementBuilder;
 class ElseStatementBuilder;
 class SwitchStatementBuilder;
 class CaseStatementBuilder;
+class LoopStatementBuilder;
 }  // namespace hir
 
 namespace mir {
@@ -79,6 +81,7 @@ class Context {
   friend class hir::ElseStatementBuilder;
   friend class hir::SwitchStatementBuilder;
   friend class hir::CaseStatementBuilder;
+  friend class hir::LoopStatementBuilder;
 
   friend class BasicBlock;
   friend class SequentialControlFlowGraph;
@@ -93,6 +96,7 @@ class Context {
   Allocator<ConditionalControlFlowGraph> cond_allocator;
   Allocator<MultiWayBranchControlFlowGraph> mbr_allocator;
   Allocator<MultiWayBranchArm> mbr_arm_allocator;
+  Allocator<LoopControlFlowGraph> loop_allocator;
 
   // The top-level control-flow graph to which all
   SequentialControlFlowGraph entry;

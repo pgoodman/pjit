@@ -41,16 +41,7 @@ void ConditionalControlFlowGraph::VisitPreOrder(
     PJIT_UNUSED(successor_chain);
   } while (0);
 
-  // If we haven't already visited the successor of the control-flow graph
-  // then make sure that we mark it as already visited so that we can visit
-  // it later.
-  //
-  // TODO(pag): Assert that the successor was not already visited.
-  bool successor_was_visited(true);
-  if (successor->last_visitor != visitor) {
-    successor_was_visited = false;
-    successor->last_visitor = visitor;
-  }
+  successor->last_visitor = visitor;
 
   // Visit the `if_true` and `if_false` branches.
   for (SequentialControlFlowGraph *branch : {&if_true, &if_false}) {
@@ -61,16 +52,17 @@ void ConditionalControlFlowGraph::VisitPreOrder(
     PJIT_UNUSED(predecessor_chain);
   }
 
+  successor->last_visitor = nullptr;
+
   // The successor of the conditional CFG wasn't previously visited, so now
   // we can go and visit it.
-  if (!successor_was_visited) {
-    successor->last_visitor = nullptr;
+  do {
     PredecessorBasicBlockFinder predecessor(successor, {&if_true, &if_false});
     BasicBlockFinderChain predecessor_chain(
         visitor->find_predecessors, predecessor);
     visitor->VisitPreOrder(successor);
     PJIT_UNUSED(predecessor_chain);
-  }
+  } while (0);
 }
 
 

@@ -12,6 +12,7 @@
 #include "pjit/mir/cfg/finder.h"
 #include "pjit/mir/cfg/multi-way-branch.h"
 #include "pjit/mir/cfg/sequential.h"
+#include "pjit/mir/cfg/loop.h"
 
 namespace pjit {
 namespace mir {
@@ -43,6 +44,7 @@ ControlFlowGraphVisitor::ControlFlowGraphVisitor(void)
 PJIT_DEFINE_CONTROL_FLOW_GRAPH_VISITORS(SequentialControlFlowGraph)
 PJIT_DEFINE_CONTROL_FLOW_GRAPH_VISITORS(ConditionalControlFlowGraph)
 PJIT_DEFINE_CONTROL_FLOW_GRAPH_VISITORS(MultiWayBranchControlFlowGraph)
+PJIT_DEFINE_CONTROL_FLOW_GRAPH_VISITORS(LoopControlFlowGraph)
 
 
 void ControlFlowGraphVisitor::VisitSuccessors(BasicBlockVisitor *visitor) {

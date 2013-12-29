@@ -104,6 +104,7 @@ class MultiWayBranchControlFlowGraph : public ControlFlowGraph {
 
   // The branch that is taken when the `conditional_value` is true.
   MultiWayBranchArm *arms;
+  MultiWayBranchArm *default_arm;
 
   // The successor CFG to this IF/ELSE statement.
   SequentialControlFlowGraph *successor;

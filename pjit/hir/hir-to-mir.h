@@ -400,6 +400,14 @@ class SwitchStatementBuilder {
     PJIT_HIR_SYM_ID.Condition(cond); \
 
 
+#define PJIT_HIR_DEFAULT(context) \
+  { \
+    pjit::hir::CaseStatementBuilder PJIT_HIR_SYM_ID( \
+        (context), nullptr); \
+    PJIT_UNUSED(PJIT_HIR_SYM_ID); \
+  }
+
+
 #define PJIT_HIR_CASE(context, value) \
   { \
     pjit::hir::CaseStatementBuilder PJIT_HIR_SYM_ID( \
@@ -413,6 +421,52 @@ class SwitchStatementBuilder {
 
 
 #define PJIT_HIR_END_SWITCH \
+  }
+
+
+class LoopStatementBuilder {
+ public:
+  explicit LoopStatementBuilder(mir::Context &context_);
+  ~LoopStatementBuilder(void);
+
+  // The type is already a boolean, no conversion is necessary.
+  template <typename T>
+  void Condition(T &&val) {
+    loop->conditional_value = GetRValue(*context, val);
+
+    // Ensure that emitting instructions without a CASE statement results in
+    // a fault.
+    context->current = &(loop->update);
+  }
+
+  inline void Init(void) {
+    context->current = &(loop->condition);
+  }
+
+  inline void Update(void) {
+    context->current = &(loop->body);
+  }
+
+ private:
+  mir::Context *context;
+  mir::LoopControlFlowGraph *loop;
+  mir::SequentialControlFlowGraph *successor;
+};
+
+
+#define PJIT_HIR_FOR(context, init, test, next) \
+  { \
+    pjit::hir::LoopStatementBuilder PJIT_HIR_SYM_ID(context); \
+    PJIT_UNPACK init ; \
+    PJIT_HIR_SYM_ID.Init(); \
+    PJIT_HIR_SYM_ID.Condition(test); \
+    { PJIT_UNPACK next ; } \
+    PJIT_HIR_SYM_ID.Update(); \
+    { \
+
+
+#define PJIT_HIR_END_FOR \
+    } \
   }
 
 
