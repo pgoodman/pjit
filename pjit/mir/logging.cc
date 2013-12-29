@@ -247,11 +247,11 @@ int Log(LogLevel level, const mir::Instruction *in) {
 #undef PJIT_DECLARE_BINARY_OPERATOR
 #undef PJIT_DECLARE_UNARY_OPERATOR
     case mir::Operation::OP_LOAD_MEMORY: {
-      op_symbol = " load ";
+      op_symbol = " = deref ";
       goto two_operands;
     }
     case mir::Operation::OP_STORE_MEMORY: {
-      op_symbol = " store ";
+      op_symbol = " <- ";
       goto two_operands;
     }
     case mir::Operation::OP_CONVERT_TYPE: {

@@ -102,6 +102,9 @@ void ConditionalControlFlowGraph::VisitPostOrder(
 }
 
 
+PJIT_DEFINE_CFG_VISITOR_RESOLVER(ConditionalControlFlowGraph)
+
+
 void ConditionalControlFlowGraph::VisitFirst(BasicBlockVisitor *visitor) {
   condition.VisitFirst(visitor);
 }

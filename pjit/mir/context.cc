@@ -8,6 +8,7 @@
 
 #include "pjit/mir/context.h"
 #include "pjit/mir/instruction.h"
+#include "pjit/mir/gc.h"
 
 namespace pjit {
 namespace mir {
@@ -65,6 +66,28 @@ void Context::VisitPreOrder(ControlFlowGraphVisitor *visitor) {
 
 void Context::VisitPostOrder(ControlFlowGraphVisitor *visitor) {
   visitor->VisitPostOrder(&entry);
+}
+
+
+void Context::GarbageCollect(void) {
+  symbol_allocator.MarkAllUnreachable();
+  instruction_allocator.MarkAllUnreachable();
+  seq_allocator.MarkAllUnreachable();
+  cond_allocator.MarkAllUnreachable();
+  mbr_allocator.MarkAllUnreachable();
+  mbr_arm_allocator.MarkAllUnreachable();
+  loop_allocator.MarkAllUnreachable();
+
+  GarbageCollectionVisitor gc_visitor(this);
+  VisitPreOrder(&gc_visitor);
+
+  symbol_allocator.FreeUnreachable();
+  instruction_allocator.FreeUnreachable();
+  seq_allocator.FreeUnreachable();
+  cond_allocator.FreeUnreachable();
+  mbr_allocator.FreeUnreachable();
+  mbr_arm_allocator.FreeUnreachable();
+  loop_allocator.FreeUnreachable();
 }
 
 

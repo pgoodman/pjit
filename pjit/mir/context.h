@@ -34,6 +34,8 @@ class LoopStatementBuilder;
 
 namespace mir {
 
+class GarbageCollectionVisitor;
+
 
 // Represents a compilation "context" for the medium-level intermediate
 // representation. The MIR has a fairly direct correspondence to C and its
@@ -86,6 +88,7 @@ class Context {
   friend class BasicBlock;
   friend class SequentialControlFlowGraph;
   friend class ConditionalControlFlowGraph;
+  friend class GarbageCollectionVisitor;
 
   unsigned next_symbol_id;
 

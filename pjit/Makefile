@@ -28,6 +28,7 @@ PJIT_OBJS += $(PJIT_BIN_DIR)/pjit/mir/cfg/conditional.o
 PJIT_OBJS += $(PJIT_BIN_DIR)/pjit/mir/cfg/multi-way-branch.o
 PJIT_OBJS += $(PJIT_BIN_DIR)/pjit/mir/cfg/loop.o
 PJIT_OBJS += $(PJIT_BIN_DIR)/pjit/mir/logging.o
+PJIT_OBJS += $(PJIT_BIN_DIR)/pjit/mir/gc.o
 PJIT_OBJS += $(PJIT_BIN_DIR)/pjit/hir/hir-to-mir.o
 
 

@@ -29,12 +29,9 @@ int main(int argc_, const char **argv_) {
     ASSIGN(C, argc, ADD(C, argc, 1));
 
     PJIT_HIR_FOR(C,
-       (PJIT_HIR_DECLARE(C, (int), i);
-        ASSIGN(C, i, 0)),
+       (PJIT_HIR_DECLARE(C, (int), i); ASSIGN(C, i, 0)),
        (COMPARE_LT(C, i, 10)),
        (ASSIGN(C, i, ADD(C, i, 1))))
-
-
 
     PJIT_HIR_END_FOR
 
@@ -55,6 +52,7 @@ int main(int argc_, const char **argv_) {
     PJIT_HIR_END_SWITCH
   PJIT_HIR_END_IF
 
+  C.GarbageCollect();
   pjit::Log(pjit::LogLevel::LogOutput, &C);
 
   return 0;

@@ -71,6 +71,8 @@ class Allocator {
 
     obj->~T();
 
+    memset(obj, POISON, sizeof *obj);  // Poison the memory;
+
     PageMetaData *page(ObjectToPage(obj));
     FreeFromPage(page, obj - page->objects);
   }
@@ -88,14 +90,35 @@ class Allocator {
     MarkPagesUnreachable(partial_pages);
   }
 
-  void MarkReachable(T *obj) {
+  void MarkReachable(const T *obj) {
     PageMetaData *page(ObjectToPage(obj));
     page->status[obj - page->objects].is_reachable = true;
   }
 
   void FreeUnreachable(void) {
-    FreePagesUnreachable(full_pages);
-    FreePagesUnreachable(partial_pages);
+    FreeUnreachableObjectsOnPages(full_pages);
+    FreeUnreachableObjectsOnPages(partial_pages);
+
+    for (PageMetaData *page(full_pages), *next(nullptr);
+         nullptr != page; page = next) {
+      next = page->next;
+
+      if (page->num_free) {
+        UnchainPage(full_pages, page);
+        ChainPage(partial_pages, page);
+      }
+    }
+  }
+
+  // Determine whether some memory is owned by this allocator. This is somewhat
+  // unsafe, as it assumes that the `allocator` pointer for the page meta-data
+  // is consistently placed across different instantiations of the `Allocator`
+  // class template.
+  bool OwnsObject(const T *obj) {
+    if (!obj) {
+      return false;
+    }
+    return this == ObjectToPage(obj)->allocator;
   }
 
  private:
@@ -104,11 +127,23 @@ class Allocator {
   // The basic implementation of the page meta-data. This excludes the actual
   // meta-data about individual objects.
   struct PageMetaDataImpl {
+
+    // Used to detect if this allocator or another allocator owns this object.
+    const void * const allocator;
+
     PageMetaData *prev;
     PageMetaData *next;
     unsigned num_allocated;
     unsigned num_free;
     T *objects;
+
+    explicit PageMetaDataImpl(void *allocator_)
+        : allocator(allocator_),
+          prev(nullptr),
+          next(nullptr),
+          num_allocated(0),
+          num_free(0),
+          objects(nullptr) {}
   };
 
   enum : unsigned {
@@ -116,7 +151,8 @@ class Allocator {
     OBJECT_SIZE = sizeof(T),
     OBJECT_ALIGN = PJIT_ALIGNMENT_OF(T),
     IMPL_SIZE = sizeof(PageMetaDataImpl),
-    ESTIMATED_NUM_OBJECTS = (SLAB_SIZE - IMPL_SIZE) / OBJECT_SIZE
+    ESTIMATED_NUM_OBJECTS = (SLAB_SIZE - IMPL_SIZE) / OBJECT_SIZE,
+    POISON = 0xAB
   };
 
   // Meta-data about allocated objects. These bits determine whether or not
@@ -134,6 +170,11 @@ class Allocator {
   // Full page meta-data, including per-object meta-data.
   struct PageMetaData : public PageMetaDataImpl {
     ObjectMetaData status[ESTIMATED_NUM_OBJECTS];
+
+    explicit PageMetaData(void *allocator_)
+        : PageMetaDataImpl(allocator_) {
+      memset(&(status[0]), 0, sizeof(ObjectMetaData) * ESTIMATED_NUM_OBJECTS);
+    }
   };
 
   enum : unsigned {
@@ -165,7 +206,7 @@ class Allocator {
   Allocator(const Allocator<T> &&) = delete;
 
   // Returns the Page containing this object.
-  PageMetaData *ObjectToPage(T *object) {
+  PageMetaData *ObjectToPage(const T *object) {
     const UnsignedPointer addr(reinterpret_cast<UnsignedPointer>(object));
     return reinterpret_cast<PageMetaData *>(addr - (addr % SLAB_SIZE));
   }
@@ -173,7 +214,8 @@ class Allocator {
   // Returns a new Page for use.
   PageMetaData *AllocatePage(void) {
     void *addr(AllocatePages(kNumPages));
-    PageMetaData *page(reinterpret_cast<PageMetaData *>(addr));
+    memset(addr, POISON, SLAB_SIZE);
+    PageMetaData *page(new (addr) PageMetaData(this));
     page->num_free = NUM_OBJECTS;
     page->objects = reinterpret_cast<T *>(
         reinterpret_cast<UnsignedPointer>(addr) + BEGIN_OFFSET);
@@ -264,6 +306,24 @@ class Allocator {
       if (page->status[i].is_allocated) {
         page->status[i].is_allocated = false;
         page->objects[i].~T();
+      }
+    }
+    page->num_allocated = 0;
+    page->num_free = NUM_OBJECTS;
+  }
+
+  void FreeUnreachableObjectsOnPages(PageMetaData *page) {
+    for (; nullptr != page; page = page->next) {
+      for (unsigned i(0); i < NUM_OBJECTS; ++i) {
+        if (page->status[i].is_allocated && !page->status[i].is_reachable) {
+          T *object(&(page->objects[i]));
+          page->status[i].is_allocated = false;
+          object->~T();
+          memset(object, POISON, sizeof(T));
+
+          --(page->num_allocated);
+          ++(page->num_free);
+        }
       }
     }
   }

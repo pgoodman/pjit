@@ -50,6 +50,9 @@ class ControlFlowGraph {
   ControlFlowGraph *parent;
   ControlFlowGraphVisitor *last_visitor;
 
+  virtual void DoVisitPreOrder(ControlFlowGraphVisitor *) = 0;
+  virtual void DoVisitPostOrder(ControlFlowGraphVisitor *) = 0;
+
   // Visit the first basic block(s) within this CFG.
   virtual void VisitFirst(BasicBlockVisitor *) = 0;
 
@@ -83,6 +86,17 @@ class ControlFlowGraph {
   friend class cls; \
   virtual void VisitPreOrder(cls *cfg); \
   virtual void VisitPostOrder(cls *cfg)
+
+
+#define PJIT_DEFINE_CFG_VISITOR_RESOLVER(cls) \
+  void cls::DoVisitPreOrder( \
+      ControlFlowGraphVisitor *visitor) { \
+    visitor->VisitPreOrder(this); \
+  } \
+  void cls::DoVisitPostOrder( \
+      ControlFlowGraphVisitor *visitor) { \
+    visitor->VisitPostOrder(this); \
+  }
 
 
 // Abstract control-flow graph visitor. Two traversal orders are defined over

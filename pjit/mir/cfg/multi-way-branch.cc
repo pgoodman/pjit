@@ -112,6 +112,9 @@ void MultiWayBranchControlFlowGraph::VisitPostOrder(
 }
 
 
+PJIT_DEFINE_CFG_VISITOR_RESOLVER(MultiWayBranchControlFlowGraph)
+
+
 void MultiWayBranchControlFlowGraph::VisitFirst(BasicBlockVisitor *visitor) {
   visitor->Visit(&(condition.bb));
 }

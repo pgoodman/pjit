@@ -40,12 +40,15 @@ enum class Operation {
 // A 2- or 3-operand instruction for the medium-level IR.
 class Instruction {
  public:
+  enum {
+    kMaxNumOperands = 3
+  };
 
   const Operation operation;
   Instruction *prev;
   Instruction *next;
 
-  const Symbol *operands[3];
+  const Symbol *operands[kMaxNumOperands];
 
   inline Instruction(Operation op, std::initializer_list<const Symbol *> ops)
       : operation(op),

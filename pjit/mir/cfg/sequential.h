@@ -47,6 +47,8 @@ class SequentialControlFlowGraph : public ControlFlowGraph {
   virtual void VisitPostOrder(ControlFlowGraphVisitor *);
 
  protected:
+  virtual void DoVisitPreOrder(ControlFlowGraphVisitor *visitor);
+  virtual void DoVisitPostOrder(ControlFlowGraphVisitor *visitor);
   virtual void VisitFirst(BasicBlockVisitor *);
   virtual void VisitPredecessor(ControlFlowGraph *, BasicBlockVisitor *);
 

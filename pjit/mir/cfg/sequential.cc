@@ -42,7 +42,7 @@ void SequentialControlFlowGraph::VisitPreOrder(
     FirstBasicBlockFinder predecessor({this});
     BasicBlockFinderChain predecessor_chain(
         visitor->find_predecessors, predecessor);
-    successor->VisitPreOrder(visitor);
+    successor->DoVisitPreOrder(visitor);
     PJIT_UNUSED(predecessor_chain);
   }
 }
@@ -58,7 +58,7 @@ void SequentialControlFlowGraph::VisitPostOrder(
     FirstBasicBlockFinder predecessor({this});
     BasicBlockFinderChain predecessor_chain(
         visitor->find_predecessors, predecessor);
-    successor->VisitPreOrder(visitor);
+    successor->DoVisitPreOrder(visitor);
     PJIT_UNUSED(predecessor_chain);
   }
 
@@ -75,6 +75,9 @@ void SequentialControlFlowGraph::VisitPostOrder(
     visitor->VisitPreOrder(&bb);
   }
 }
+
+
+PJIT_DEFINE_CFG_VISITOR_RESOLVER(SequentialControlFlowGraph)
 
 
 void SequentialControlFlowGraph::VisitFirst(BasicBlockVisitor *visitor) {

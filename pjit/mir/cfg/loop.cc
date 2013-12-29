@@ -123,6 +123,9 @@ void LoopControlFlowGraph::VisitPostOrder(
 }
 
 
+PJIT_DEFINE_CFG_VISITOR_RESOLVER(LoopControlFlowGraph)
+
+
 void LoopControlFlowGraph::VisitFirst(BasicBlockVisitor *visitor) {
   init.VisitFirst(visitor);
 }

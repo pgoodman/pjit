@@ -29,6 +29,7 @@ class ControlFlowGraphVisitor;
 class MultiWayBranchControlFlowGraph;
 class MultiWayPredecessorBasicBlockFinder;
 class MultiWayFriendBasicBlockFinder;
+class GarbageCollectionVisitor;
 
 // Represents a single arm of a multi-way branch CFG.
 class MultiWayBranchArm {
@@ -44,6 +45,7 @@ class MultiWayBranchArm {
   friend class MultiWayBranchControlFlowGraph;
   friend class MultiWayFirstBasicBlockFinder;
   friend class MultiWayPredecessorBasicBlockFinder;
+  friend class GarbageCollectionVisitor;
 
   // The value that the switch condition value must equal to in order to take
   // this arm of the multi-way branch.
@@ -79,6 +81,8 @@ class MultiWayBranchControlFlowGraph : public ControlFlowGraph {
   virtual void VisitPostOrder(ControlFlowGraphVisitor *);
 
  protected:
+  virtual void DoVisitPreOrder(ControlFlowGraphVisitor *visitor);
+  virtual void DoVisitPostOrder(ControlFlowGraphVisitor *visitor);
   virtual void VisitFirst(BasicBlockVisitor *);
   virtual void VisitPredecessor(ControlFlowGraph *, BasicBlockVisitor *);
 
@@ -88,6 +92,7 @@ class MultiWayBranchControlFlowGraph : public ControlFlowGraph {
   friend class Context;
   friend class MultiWayFirstBasicBlockFinder;
   friend class MultiWayPredecessorBasicBlockFinder;
+  friend class GarbageCollectionVisitor;
 
   // The control-flow graph containing the condition.
   //
