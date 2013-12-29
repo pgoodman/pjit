@@ -32,7 +32,6 @@ enum class Operation {
   OP_LOAD_MEMORY,
   OP_STORE_MEMORY,
   OP_CONVERT_TYPE,
-  OP_LOAD_IMMEDIATE,
   OP_ASSIGN,
   OP_NOP
 };

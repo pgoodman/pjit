@@ -116,12 +116,7 @@ template <
   typename EnableIf<StaticTypeInfoFactory<T>::IS_DEFINED, int>::Type=0
 >
 inline const Symbol *GetRValue(mir::Context &context, T val) {
-  const TypeInfo *type(GetTypeInfoForType<T>());
-  const Symbol *dest(context.MakeSymbol(type));
-  context.EmitInstruction(
-      mir::Operation::OP_LOAD_IMMEDIATE,
-      {dest, context.MakeSymbol(val)});
-  return dest;
+  return context.MakeSymbol(val);
 }
 
 

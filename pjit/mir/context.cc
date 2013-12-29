@@ -25,7 +25,7 @@ Context::Context(void)
 
 
 Symbol *Context::MakeSymbol(const TypeInfo *type) {
-  return symbol_allocator.Allocate(type, "", next_symbol_id++);
+  return symbol_allocator.Allocate(type, nullptr, next_symbol_id++);
 }
 
 

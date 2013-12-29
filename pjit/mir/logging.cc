@@ -9,6 +9,7 @@
 #include "pjit/base/base.h"
 #include "pjit/base/unsafe-cast.h"
 #include "pjit/base/type-info.h"
+#include "pjit/base/numeric-types.h"
 
 #include "pjit/mir/logging.h"
 #include "pjit/mir/context.h"
@@ -157,6 +158,48 @@ int Log(LogLevel level, const TypeInfo *type) {
 }
 
 
+#define MAKE_SIMPLE_SYMBOL_LOGGER(type_name, field, format) \
+  if (GetTypeInfoForType<type_name>() == sym->type) { \
+    return Log(level, format ":", sym->value.field); \
+  }
+
+
+// Treating a symbol as containing a constant value, log out the value for that
+// symbol.
+static int LogConstant(LogLevel level, const Symbol *sym) {
+  switch (sym->type->kind) {
+    case TypeKind::TYPE_KIND_INTEGER:
+    case TypeKind::TYPE_KIND_BOOLEAN:
+    case TypeKind::TYPE_KIND_FLOATING_POINT: {
+      MAKE_SIMPLE_SYMBOL_LOGGER(U8, u8, "%u")
+      MAKE_SIMPLE_SYMBOL_LOGGER(S8, s8, "%d")
+      MAKE_SIMPLE_SYMBOL_LOGGER(U16, u16, "%u")
+      MAKE_SIMPLE_SYMBOL_LOGGER(S16, s16, "%d")
+      MAKE_SIMPLE_SYMBOL_LOGGER(U32, u32, "%u")
+      MAKE_SIMPLE_SYMBOL_LOGGER(S32, s32, "%d")
+      MAKE_SIMPLE_SYMBOL_LOGGER(U64, u64, "%lu")
+      MAKE_SIMPLE_SYMBOL_LOGGER(S64, s64, "%ld")
+
+      // Floats are promoted to doubles through C-style variadic functions.
+      MAKE_SIMPLE_SYMBOL_LOGGER(F32, f32, "%f")
+      MAKE_SIMPLE_SYMBOL_LOGGER(F64, f64, "%f")
+
+      return Log(level, "???:");
+    }
+
+    case TypeKind::TYPE_KIND_FUNCTION:
+    case TypeKind::TYPE_KIND_POINTER:
+      return Log(level, "%p:", sym->value.pointer);
+
+    case TypeKind::TYPE_KIND_UNDEFINED:
+    case TypeKind::TYPE_KIND_STRUCTURE:
+    case TypeKind::TYPE_KIND_UNION:
+      return Log(level, "???:");
+  }
+  return 0;
+}
+
+
 // Log out a symbol, which might have a name/number, or might be an immediate.
 // This also logs out the symbols type.
 int Log(LogLevel level, const Symbol *sym) {
@@ -165,13 +208,16 @@ int Log(LogLevel level, const Symbol *sym) {
   }
 
   int num_logged_bytes(0);
-  num_logged_bytes += Log(level, sym->type);
   if (!sym->id) {  // Constant / immediate literal.
-    return Log(level, ":C"); // TODO(pag): Implement this.
+    num_logged_bytes += LogConstant(level, sym);
+  } else if (sym->value.name) {
+    num_logged_bytes += Log(
+        level, "%s:", sym->value.name);
   } else {
     num_logged_bytes += Log(
-        level, ":%s$%u", sym->value.name, sym->id);
+        level, "$%u:", sym->id);
   }
+  num_logged_bytes += Log(level, sym->type);
 
   return num_logged_bytes;
 }
@@ -210,10 +256,6 @@ int Log(LogLevel level, const mir::Instruction *in) {
     }
     case mir::Operation::OP_CONVERT_TYPE: {
       op_symbol = " convert ";
-      goto two_operands;
-    }
-    case mir::Operation::OP_LOAD_IMMEDIATE: {
-      op_symbol = " load ";
       goto two_operands;
     }
     case mir::Operation::OP_ASSIGN: {

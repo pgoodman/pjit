@@ -191,6 +191,11 @@ int Log(LogLevel level, const char *format, ...) throw() {
         ++ch;
         goto retry;
 
+      case 'f':  // Floats and doubles are all treated as doubles.
+        *write_ch++ = 'F';
+        ++ch;
+        break;
+
       case '\0':  // End of string.
         *write_ch++ = '%';
         break;
