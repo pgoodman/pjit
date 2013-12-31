@@ -32,6 +32,11 @@ struct AlignOf {
 # define PJIT_ALIGNMENT_OF(x) alignof(x)
 #endif
 
+
+#define PJIT_LIKELY(x) __builtin_expect((x),1)
+#define PJIT_UNLIKELY(x) __builtin_expect((x),0)
+
+
 }  // namespace pjit
 
 

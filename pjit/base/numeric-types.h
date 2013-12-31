@@ -47,6 +47,8 @@ static_assert(
 typedef S64 SignedPointer;
 typedef U64 UnsignedPointer;
 
+typedef decltype(sizeof(SignedPointer)) UnsignedSize;
+
 }  // namespace pjit
 
 #endif  // PJIT_BASE_NUMERIC_TYPES_H_

@@ -23,12 +23,12 @@ template <
   typename ToT,
   typename FromT,
   typename EnableIf<
-    IsPointer<FromT>::RESULT || IsIntegral<FromT>::RESULT,
+    IsPointer<FromT>::RESULT || IsInteger<FromT>::RESULT,
     void,
     int
   >::Type = 0
 >
-inline ToT UnsafeCast(FromT v) {
+inline ToT UnsafeCast(const FromT v) {
   static_assert(sizeof(FromT) == sizeof(ToT),
     "Dangerous unsafe cast between two types of different sizes.");
 
@@ -43,11 +43,11 @@ template <
   typename ToT,
   typename FromT,
   typename EnableIf<
-    IsPointer<FromT>::RESULT && IsIntegral<ToT>::RESULT,
+    IsPointer<FromT>::RESULT && IsInteger<ToT>::RESULT,
     int
   >::Type = 0
 >
-inline ToT UnsafeCast(FromT v) {
+inline ToT UnsafeCast(const FromT v) {
   return static_cast<ToT>(reinterpret_cast<UnsignedPointer>(v));
 }
 
@@ -61,23 +61,22 @@ template <
     int
   >::Type = 0
 >
-inline ToT UnsafeCast(FromT v) {
+inline ToT UnsafeCast(const FromT v) {
   return reinterpret_cast<ToT>(reinterpret_cast<UnsignedPointer>(v));
 }
 
 
-// Pointer to non-integral, non-pointer type.
+// Integral to pointer type.
 template <
   typename ToT,
   typename FromT,
   typename EnableIf<
-    IsPointer<FromT>::RESULT &&
-    !IsIntegral<ToT>::RESULT && !IsPointer<ToT>::RESULT,
+  IsInteger<FromT>::RESULT && IsPointer<ToT>::RESULT,
     int
   >::Type = 0
 >
-inline ToT UnsafeCast(FromT v) {
-  return UnsafeCast<ToT>(reinterpret_cast<UnsignedPointer>(v));
+inline ToT UnsafeCast(const FromT v) {
+  return reinterpret_cast<ToT>(static_cast<UnsignedPointer>(v));
 }
 
 }  // namespace pjit

@@ -15,22 +15,8 @@ ifeq ($(PJIT_GCC),1)
 endif
 
 # Objects of the JIT to compile.
-PJIT_OBJS = 
-PJIT_OBJS += $(PJIT_BIN_DIR)/pjit/base/type-info.o
-PJIT_OBJS += $(PJIT_BIN_DIR)/pjit/base/allocate.o
-PJIT_OBJS += $(PJIT_BIN_DIR)/pjit/base/logging.o
-PJIT_OBJS += $(PJIT_BIN_DIR)/pjit/mir/context.o
-PJIT_OBJS += $(PJIT_BIN_DIR)/pjit/mir/cfg/control-flow-graph.o
-PJIT_OBJS += $(PJIT_BIN_DIR)/pjit/mir/cfg/finder.o
-PJIT_OBJS += $(PJIT_BIN_DIR)/pjit/mir/cfg/basic-block.o
-PJIT_OBJS += $(PJIT_BIN_DIR)/pjit/mir/cfg/sequential.o
-PJIT_OBJS += $(PJIT_BIN_DIR)/pjit/mir/cfg/conditional.o
-PJIT_OBJS += $(PJIT_BIN_DIR)/pjit/mir/cfg/multi-way-branch.o
-PJIT_OBJS += $(PJIT_BIN_DIR)/pjit/mir/cfg/loop.o
-PJIT_OBJS += $(PJIT_BIN_DIR)/pjit/mir/logging.o
-PJIT_OBJS += $(PJIT_BIN_DIR)/pjit/mir/gc.o
-PJIT_OBJS += $(PJIT_BIN_DIR)/pjit/hir/hir-to-mir.o
-
+PJIT_SRC_FILES = $(shell find $(PJIT_SRC_DIR)/pjit/ -type f -name '*.cc')
+PJIT_OBJS = $(subst $(PJIT_SRC_DIR),$(PJIT_BIN_DIR),$(PJIT_SRC_FILES:.cc=.o))
 
 # Mask some of the PJIT symbols.
 PJIT_LD_FLAGS =
@@ -63,18 +49,12 @@ $(PJIT_BIN_DIR)/pjit/%.o : $(PJIT_SRC_DIR)/pjit/%.cc
 
 
 lint:
-	$(PJIT_LINT) $(wildcard $(PJIT_SRC_DIR)/pjit/base/*.h)
-	$(PJIT_LINT) $(wildcard $(PJIT_SRC_DIR)/pjit/base/*.cc)
-	$(PJIT_LINT) $(wildcard $(PJIT_SRC_DIR)/pjit/hir/*.h)
-	$(PJIT_LINT) $(wildcard $(PJIT_SRC_DIR)/pjit/hir/*.cc)
-	$(PJIT_LINT) $(wildcard $(PJIT_SRC_DIR)/pjit/mir/*.h)
-	$(PJIT_LINT) $(wildcard $(PJIT_SRC_DIR)/pjit/mir/*.cc)
-	$(PJIT_LINT) $(wildcard $(PJIT_SRC_DIR)/pjit/mir/cfg/*.h)
-	$(PJIT_LINT) $(wildcard $(PJIT_SRC_DIR)/pjit/mir/cfg/*.cc)
-	#$(PJIT_LINT) $(wildcard $(PJIT_SRC_DIR)/pjit/*.h)
-	#$(PJIT_LINT) $(wildcard $(PJIT_SRC_DIR)/pjit/*.cc)
+	$(PJIT_LINT) $(shell find $(PJIT_SRC_DIR)/pjit/ -type f -name '*.h' -o -name '*.cc')
 
-all: lint $(PJIT_OBJS)
+print:
+	@echo $(PJIT_OBJS)
+
+all: print lint $(PJIT_OBJS)
 	@echo "Entering $(PJIT_SRC_DIR)/pjit/arch"
 	$(MAKE) -C $(PJIT_SRC_DIR)/pjit/arch $(MFLAGS) all
 	@$(PJIT_LD) $(PJIT_LD_FLAGS) -r -o $(PJIT_BIN_DIR)/pjit.o $(PJIT_OBJS) $(PJIT_BIN_DIR)/arch.o

@@ -6,7 +6,8 @@
  *      Author: Peter Goodman
  */
 
-#include "pjit/mir/gc.h"
+#include "pjit/mir/visitors/garbage-collect/visit.h"
+
 #include "pjit/mir/context.h"
 #include "pjit/mir/cfg/basic-block.h"
 #include "pjit/mir/cfg/multi-way-branch.h"

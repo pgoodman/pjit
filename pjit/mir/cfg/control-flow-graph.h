@@ -12,15 +12,12 @@
 #include "pjit/base/base.h"
 
 namespace pjit {
-
-// Forward declarations. Needed for conversion from HIR to MIR.
-class Symbol;
-
 namespace mir {
 
 // Forward declarations. Needed because there is a fair amount of sharing going
 // on between various classes so that things can get properly linked together
 // and initialized.
+class Symbol;
 class Context;
 class BasicBlock;
 class SequentialControlFlowGraph;

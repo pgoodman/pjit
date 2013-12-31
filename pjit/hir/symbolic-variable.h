@@ -12,7 +12,9 @@
 
 namespace pjit {
 
+namespace mir {
 class Symbol;
+}  // namespace mir
 
 namespace hir {
 
@@ -22,15 +24,15 @@ namespace hir {
 template <typename T>
 class SymbolicVariable {
  public:
-  inline explicit SymbolicVariable(const Symbol *symbol)
+  inline explicit SymbolicVariable(const mir::Symbol *symbol)
       : value(symbol) {}
 
-  inline const Symbol *GetSymbol(void) const {
+  inline const mir::Symbol *GetSymbol(void) const {
     return value;
   }
 
  private:
-  const Symbol *value;
+  const mir::Symbol *value;
 
   SymbolicVariable(void) = delete;
   SymbolicVariable(const SymbolicVariable<T> &) = delete;

@@ -56,42 +56,42 @@ PJIT_DEFINE_TYPE_OF_VALUE(SymbolicVariable)
 
 
 template <typename T>
-inline const Symbol *GetLValue(const SymbolicValue<T> value) {
+inline const mir::Symbol *GetLValue(const SymbolicValue<T> value) {
   return value.GetSymbol();
 }
 
 
 template <typename T>
-inline const Symbol *GetRValue(mir::Context &,
+inline const mir::Symbol *GetRValue(mir::Context &,
                                const SymbolicValue<T> value) {
   return value.GetSymbol();
 }
 
 
 template <typename T>
-inline const Symbol *GetLValue(SymbolicValueReference<T> value) {
+inline const mir::Symbol *GetLValue(SymbolicValueReference<T> value) {
   return value.GetSymbol();
 }
 
 
 template <typename T>
-inline const Symbol *GetRValue(mir::Context &context,
-                               const SymbolicValueReference<T> value) {
-  const Symbol *dest(context.MakeSymbol(GetTypeInfoForType<T>()));
-  const Symbol *source(value.GetSymbol());
+inline const mir::Symbol *GetRValue(mir::Context &context,
+                                    const SymbolicValueReference<T> value) {
+  const mir::Symbol *dest(context.MakeSymbol(GetTypeInfoForType<T>()));
+  const mir::Symbol *source(value.GetSymbol());
   context.EmitInstruction(mir::Operation::OP_LOAD_MEMORY, {dest, source});
   return dest;
 }
 
 
 template <typename T>
-inline const Symbol *GetLValue(SymbolicVariable<T> &var) {
+inline const mir::Symbol *GetLValue(SymbolicVariable<T> &var) {
   return var.GetSymbol();
 }
 
 
 template <typename T>
-inline const Symbol *GetRValue(mir::Context &, const SymbolicVariable<T> &var) {
+inline const mir::Symbol *GetRValue(mir::Context &, const SymbolicVariable<T> &var) {
   return var.GetSymbol();
 }
 
@@ -102,7 +102,7 @@ template <
   typename T,
   typename EnableIf<StaticTypeInfoFactory<T>::IS_DEFINED, int>::Type=0
 >
-inline const Symbol *GetLValue(T &) {
+inline const mir::Symbol *GetLValue(T &) {
   // TODO(pag): Assert that this isn't invoked.
   return nullptr;
 }
@@ -115,7 +115,7 @@ template <
   typename T,
   typename EnableIf<StaticTypeInfoFactory<T>::IS_DEFINED, int>::Type=0
 >
-inline const Symbol *GetRValue(mir::Context &context, T val) {
+inline const mir::Symbol *GetRValue(mir::Context &context, T val) {
   return context.MakeSymbol(val);
 }
 
@@ -135,7 +135,8 @@ inline const Symbol *GetRValue(mir::Context &context, T val) {
   SymbolicValue< \
     typename RemoveReference< \
       decltype( \
-        typename TypeOfSymbolicValue<L>::Type() op typename TypeOfSymbolicValue<R>::Type() \
+        typename TypeOfSymbolicValue<L>::Type() op \
+        typename TypeOfSymbolicValue<R>::Type() \
       ) \
     >::Type \
   > \
@@ -145,13 +146,13 @@ inline const Symbol *GetRValue(mir::Context &context, T val) {
     typedef decltype(LeftType() op RightType()) RefOutputType; \
     typedef typename RemoveReference<RefOutputType>::Type OutputType; \
     const TypeInfo *output_type(GetTypeInfoForType<OutputType>()); \
-    const Symbol *left_conv(GetRValue(context, left)); \
-    const Symbol *right_conv(GetRValue(context, right)); \
+    const mir::Symbol *left_conv(GetRValue(context, left)); \
+    const mir::Symbol *right_conv(GetRValue(context, right)); \
     if (!TypesAreEqual<bool, OutputType>::RESULT) { \
       left_conv = context.EmitConvertType(output_type, left_conv); \
       right_conv = context.EmitConvertType(output_type, right_conv); \
     } \
-    const Symbol *output_value(context.MakeSymbol(output_type)); \
+    const mir::Symbol *output_value(context.MakeSymbol(output_type)); \
     context.EmitInstruction( \
         mir::Operation::PJIT_CAT(OP_, name), \
         {output_value, left_conv, right_conv}); \
@@ -163,9 +164,7 @@ inline const Symbol *GetRValue(mir::Context &context, T val) {
   template <typename R> \
   SymbolicValue< \
     typename RemoveReference< \
-      decltype( \
-        op typename TypeOfSymbolicValue<R>::Type() \
-      ) \
+      decltype(op typename TypeOfSymbolicValue<R>::Type()) \
     >::Type \
   > \
   inline name (mir::Context &context, SymbolicValue<R> &&right) { \
@@ -173,11 +172,11 @@ inline const Symbol *GetRValue(mir::Context &context, T val) {
     typedef decltype(op RightType()) RefOutputType; \
     typedef typename RemoveReference<RefOutputType>::Type OutputType; \
     const TypeInfo *output_type(GetTypeInfoForType<OutputType>()); \
-    const Symbol *right_conv(GetRValue(context, right)); \
+    const mir::Symbol *right_conv(GetRValue(context, right)); \
     if (!TypesAreEqual<bool, OutputType>::RESULT) { \
       context.EmitConvertType(output_type, right_conv); \
     } \
-    const Symbol *output_value(context.MakeSymbol(output_type)); \
+    const mir::Symbol *output_value(context.MakeSymbol(output_type)); \
     context.EmitInstruction( \
         mir::Operation::PJIT_CAT(OP_, name), {output_value, right_conv}); \
     return SymbolicValue<OutputType>(output_value); \
@@ -242,7 +241,7 @@ inline ASSIGN(mir::Context &context, L &&left, R &&right) {
   typedef typename RemoveReference<RefOutputType>::Type OutputType;
 
   const TypeInfo *output_type_info(GetTypeInfoForType<OutputType>());
-  const Symbol *right_conv(context.EmitConvertType(
+  const mir::Symbol *right_conv(context.EmitConvertType(
       output_type_info, GetRValue(context, right)));
 
   // Storing through a memory reference.
@@ -351,7 +350,8 @@ class IfStatementBuilder {
 //       within an IF statement.
 class CaseStatementBuilder {
  public:
-  explicit CaseStatementBuilder(mir::Context &context, const Symbol *symbol);
+  explicit CaseStatementBuilder(mir::Context &context,
+                                const mir::Symbol *symbol);
   ~CaseStatementBuilder(void);
 
  private:

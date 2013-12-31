@@ -12,7 +12,9 @@
 
 namespace pjit {
 
+namespace mir {
 class Symbol;
+}  // namespace mir
 
 namespace hir {
 
@@ -24,21 +26,21 @@ template <typename T>
 class SymbolicValue {
  private:
 
-  const Symbol *symbol;
+  const mir::Symbol *symbol;
 
  public:
 
   inline SymbolicValue(void)
       : symbol(nullptr) {}
 
-  inline explicit SymbolicValue(const Symbol *value)
+  inline explicit SymbolicValue(const mir::Symbol *value)
       : symbol(value) {}
 
-  inline void AssignSymbol(const Symbol *value) {
+  inline void AssignSymbol(const mir::Symbol *value) {
     symbol = value;
   }
 
-  inline const Symbol *GetSymbol(void) const {
+  inline const mir::Symbol *GetSymbol(void) const {
     return symbol;
   }
 };
@@ -51,16 +53,16 @@ template <typename T>
 class SymbolicValueReference {
  private:
 
-  const Symbol *symbol;
+  const mir::Symbol *symbol;
 
   SymbolicValueReference(void) = delete;
 
  public:
 
-  inline explicit SymbolicValueReference(const Symbol *value)
+  inline explicit SymbolicValueReference(const mir::Symbol *value)
       : symbol(value) {}
 
-  inline const Symbol *GetSymbol(void) const {
+  inline const mir::Symbol *GetSymbol(void) const {
     return symbol;
   }
 };

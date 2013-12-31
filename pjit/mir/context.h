@@ -11,11 +11,12 @@
 
 #include <initializer_list>
 
-#include "pjit/base/allocate.h"
-#include "pjit/base/symbol.h"
 #include "pjit/base/numeric-types.h"
 #include "pjit/base/type-traits.h"
 
+#include "pjit/containers/allocator.h"
+
+#include "pjit/mir/symbol.h"
 #include "pjit/mir/instruction.h"
 #include "pjit/mir/cfg/sequential.h"
 #include "pjit/mir/cfg/conditional.h"

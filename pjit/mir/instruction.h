@@ -17,10 +17,13 @@
 namespace pjit {
 
 struct TypeInfo;
-class Symbol;
 
 namespace mir {
 
+class Symbol;
+
+
+// Medium-level IR instruction operation codes.
 enum class Operation {
 #define PJIT_DECLARE_BINARY_OPERATOR(opcode, _) \
   PJIT_CAT(OP_, opcode),

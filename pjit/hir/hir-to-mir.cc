@@ -45,7 +45,7 @@ IfStatementBuilder::~IfStatementBuilder(void) {
 
 
 CaseStatementBuilder::CaseStatementBuilder(mir::Context &context_,
-                                           const Symbol *symbol)
+                                           const mir::Symbol *symbol)
     : context(&context_) {
   mir::MultiWayBranchControlFlowGraph *mbr(context->mbr_builder->mbr);
   mir::MultiWayBranchArm *arm(context->mbr_arm_allocator.Allocate(

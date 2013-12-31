@@ -166,7 +166,7 @@ int Log(LogLevel level, const TypeInfo *type) {
 
 // Treating a symbol as containing a constant value, log out the value for that
 // symbol.
-static int LogConstant(LogLevel level, const Symbol *sym) {
+static int LogConstant(LogLevel level, const mir::Symbol *sym) {
   switch (sym->type->kind) {
     case TypeKind::TYPE_KIND_INTEGER:
     case TypeKind::TYPE_KIND_BOOLEAN:
@@ -202,7 +202,7 @@ static int LogConstant(LogLevel level, const Symbol *sym) {
 
 // Log out a symbol, which might have a name/number, or might be an immediate.
 // This also logs out the symbols type.
-int Log(LogLevel level, const Symbol *sym) {
+int Log(LogLevel level, const mir::Symbol *sym) {
   if (!sym) {
     return Log(level, "???");
   }

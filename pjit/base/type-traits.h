@@ -80,16 +80,48 @@ struct IsPointer<A *> {
 
 
 template <typename A>
-struct IsIntegral {
+struct IsPointer<A &> {
+  enum {
+    RESULT = IsPointer<A>::RESULT
+  };
+};
+
+
+template <typename A>
+struct IsPointer<A &&> {
+  enum {
+    RESULT = IsPointer<A>::RESULT
+  };
+};
+
+
+template <typename A>
+struct IsInteger {
   enum {
     RESULT = false
   };
 };
 
 
+template <typename A>
+struct IsInteger<A &> {
+  enum {
+    RESULT = IsInteger<A>::RESULT
+  };
+};
+
+
+template <typename A>
+struct IsInteger<A &&> {
+  enum {
+    RESULT = IsInteger<A>::RESULT
+  };
+};
+
+
 #define PJIT_DEFINE_IS_INTEGRAL(type) \
   template <> \
-  struct IsIntegral<type> { \
+  struct IsInteger<type> { \
     enum { \
       RESULT = true \
     }; \

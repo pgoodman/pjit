@@ -8,7 +8,7 @@
 
 #include "pjit/mir/context.h"
 #include "pjit/mir/instruction.h"
-#include "pjit/mir/gc.h"
+#include "pjit/mir/visitors/garbage-collect/visit.h"
 
 namespace pjit {
 namespace mir {

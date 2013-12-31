@@ -13,9 +13,6 @@
 #include "pjit/mir/cfg/sequential.h"
 
 namespace pjit {
-
-class Symbol;
-
 namespace hir {
 class SwitchStatementBuilder;
 class CaseStatementBuilder;
@@ -23,6 +20,7 @@ class CaseStatementBuilder;
 
 namespace mir {
 
+class Symbol;
 class Context;
 class BasicBlockVisitor;
 class ControlFlowGraphVisitor;

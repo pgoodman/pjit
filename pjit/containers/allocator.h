@@ -6,41 +6,19 @@
  *      Author: Peter Goodman
  */
 
-#ifndef PJIT_BASE_ALLOCATE_H_
-#define PJIT_BASE_ALLOCATE_H_
+#ifndef PJIT_CONTAINERS_ALLOCATOR_H_
+#define PJIT_CONTAINERS_ALLOCATOR_H_
 
 #include <new>  // NOLINT
 
 #include "pjit/base/base.h"
+#include "pjit/base/memory.h"
 #include "pjit/base/compiler.h"
 #include "pjit/base/numeric-types.h"
 #include "pjit/base/libc.h"
+#include "pjit/base/visitor.h"
 
 namespace pjit {
-
-
-// Defines the various kinds of available memory protection. This is not an
-// exhaustive list, e.g. in practice, one could have all of read, write, and
-// execute permissions; however, limiting to these three kinds of protections
-// serves as a good discipline.
-enum class MemoryProtection {
-  MEMORY_EXECUTABLE,  // Implies read-only status.
-  MEMORY_READ_ONLY,
-  MEMORY_READ_WRITE
-};
-
-
-// Allocates `num` number of pages from the OS with `MEMORY_READ_WRITE`
-// protection.
-void *AllocatePages(unsigned num);
-
-
-// Frees `num` pages back to the OS.
-void FreePages(void *, unsigned num);
-
-
-// Changes the memory protection of some pages.
-void ProtectPages(void *addr, unsigned num, MemoryProtection prot);
 
 
 /// Defines a simple, single-threaded allocator for a single kind of object. The
@@ -121,6 +99,12 @@ class Allocator {
     return this == ObjectToPage(obj)->allocator;
   }
 
+
+  // Apply a visitor to every allocated object owned by this allocator.
+  void Visit(typename VisitorFor<T>::Type *visitor) {
+
+  }
+
  private:
   struct PageMetaData;
 
@@ -147,7 +131,7 @@ class Allocator {
   };
 
   enum : unsigned {
-    SLAB_SIZE = PJIT_PAGE_FRAME_SIZE * kNumPages,
+    SLAB_SIZE = pjit::PAGE_FRAME_SIZE * kNumPages,
     OBJECT_SIZE = sizeof(T),
     OBJECT_ALIGN = PJIT_ALIGNMENT_OF(T),
     IMPL_SIZE = sizeof(PageMetaDataImpl),
@@ -352,4 +336,4 @@ class Allocator {
 }  // namespace pjit
 
 
-#endif  // PJIT_BASE_ALLOCATE_H_
+#endif  // PJIT_CONTAINERS_ALLOCATOR_H_

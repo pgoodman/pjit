@@ -6,8 +6,8 @@
  *      Author: Peter Goodman
  */
 
-
-#include "pjit/base/allocate.h"
+#include "pjit/base/base.h"
+#include "pjit/base/memory.h"
 #include "pjit/base/libc.h"
 
 #include <sys/mman.h>
@@ -33,13 +33,13 @@ namespace pjit {
 void *AllocatePages(unsigned num) {
   void *ret(mmap(
       nullptr,
-      PJIT_PAGE_FRAME_SIZE * num,
+      pjit::PAGE_FRAME_SIZE * num,
       PROT_READ | PROT_WRITE,
       MAP_PRIVATE | MAP_ANONYMOUS,
       -1,
       0));
 
-  memset(ret, 0, PJIT_PAGE_FRAME_SIZE);
+  memset(ret, 0, pjit::PAGE_FRAME_SIZE);
 
   return ret;
 }
@@ -47,7 +47,7 @@ void *AllocatePages(unsigned num) {
 
 // Frees `num` pages back to the OS.
 void FreePages(void *addr, unsigned num) {
-  munmap(addr, num * PJIT_PAGE_FRAME_SIZE);
+  munmap(addr, num * pjit::PAGE_FRAME_SIZE);
 }
 
 
@@ -58,10 +58,12 @@ void ProtectPages(void *addr, unsigned num, MemoryProtection prot) {
     prot_bits = PROT_EXEC;
   } else if (MemoryProtection::MEMORY_READ_ONLY == prot) {
     prot_bits = PROT_READ;
-  } else {
+  } else if (MemoryProtection::MEMORY_READ_WRITE == prot) {
     prot_bits = PROT_READ | PROT_WRITE;
+  } else {
+    prot_bits = 0; //  MEMORY_INACCESSIBLE
   }
-  mprotect(addr, num * PJIT_PAGE_FRAME_SIZE, prot_bits);
+  mprotect(addr, num * pjit::PAGE_FRAME_SIZE, prot_bits);
 }
 
 

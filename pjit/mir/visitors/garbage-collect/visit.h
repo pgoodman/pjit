@@ -6,9 +6,8 @@
  *      Author: Peter Goodman
  */
 
-#ifndef PJIT_MIR_GC_H_
-#define PJIT_MIR_GC_H_
-
+#ifndef PJIT_MIR_VISITORS_GARBAGE_COLLECT_VISIT_H_
+#define PJIT_MIR_VISITORS_GARBAGE_COLLECT_VISIT_H_
 
 #include "pjit/base/base.h"
 #include "pjit/mir/cfg/control-flow-graph.h"
@@ -46,4 +45,4 @@ class GarbageCollectionVisitor : public ControlFlowGraphVisitor {
 }  // namespace mir
 }  // namespace pjit
 
-#endif  // PJIT_MIR_GC_H_
+#endif  // PJIT_MIR_VISITORS_GARBAGE_COLLECT_VISIT_H_
