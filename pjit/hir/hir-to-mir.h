@@ -63,7 +63,7 @@ inline const mir::Symbol *GetLValue(const SymbolicValue<T> value) {
 
 template <typename T>
 inline const mir::Symbol *GetRValue(mir::Context &,
-                               const SymbolicValue<T> value) {
+                                    const SymbolicValue<T> value) {
   return value.GetSymbol();
 }
 
@@ -75,11 +75,22 @@ inline const mir::Symbol *GetLValue(SymbolicValueReference<T> value) {
 
 
 template <typename T>
-inline const mir::Symbol *GetRValue(mir::Context &context,
-                                    const SymbolicValueReference<T> value) {
+const mir::Symbol *GetRValue(mir::Context &context,
+                             const SymbolicValueReference<T> value) {
   const mir::Symbol *dest(context.MakeSymbol(GetTypeInfoForType<T>()));
-  const mir::Symbol *source(value.GetSymbol());
-  context.EmitInstruction(mir::Operation::OP_LOAD_MEMORY, {dest, source});
+  switch (value.kind) {
+    case SymbolicValueReferenceKind::MEMORY:
+      context.EmitInstruction(
+          mir::Operation::OP_LOAD_MEMORY,
+          {dest, value.symbol});
+      break;
+    case SymbolicValueReferenceKind::INDEX:
+    case SymbolicValueReferenceKind::FIELD:
+      context.EmitInstruction(
+          mir::Operation::OP_LOAD_FIELD,
+          {dest, value.symbol, value.meta.field_info});
+  }
+
   return dest;
 }
 
@@ -91,7 +102,8 @@ inline const mir::Symbol *GetLValue(SymbolicVariable<T> &var) {
 
 
 template <typename T>
-inline const mir::Symbol *GetRValue(mir::Context &, const SymbolicVariable<T> &var) {
+inline const mir::Symbol *GetRValue(mir::Context &,
+                                    const SymbolicVariable<T> &var) {
   return var.GetSymbol();
 }
 
@@ -218,7 +230,7 @@ SymbolicValueReference<
     decltype(*typename TypeOfSymbolicValue<T>::Type())
   >::Type
 >
-inline LOAD_MEMORY(mir::Context &context, T &&right) {
+LOAD_MEMORY(mir::Context &context, T &&right) {
   typedef typename TypeOfSymbolicValue<T>::Type RightType;
   typedef decltype(*RightType()) RefOutputType;
   typedef typename RemoveReference<RefOutputType>::Type OutputType;
@@ -230,13 +242,81 @@ inline LOAD_MEMORY(mir::Context &context, T &&right) {
 }
 
 
+#define PJIT_HIR_ACCESS_FIELD(context, obj, field) \
+  pjit::hir::ACCESS_FIELD<decltype( \
+    static_cast< \
+      typename pjit::RemovePointer< \
+        typename TypeOfSymbolicValue<decltype(obj)>::Type \
+      >::Type * \
+    >(nullptr)->field \
+  )>((context), obj, PJIT_TO_STRING(field))
+
+
+// Load the value of a field from a structure.
+template <typename FieldType, typename StructType>
+SymbolicValueReference<typename RemoveReference<FieldType>::Type>
+ACCESS_FIELD(mir::Context &context, StructType &&obj, const char *field_name) {
+  typedef typename TypeOfSymbolicValue<StructType>::Type RightType;
+  typedef typename RemoveReference<FieldType>::Type OutputType;
+
+  const TypeInfo *info(nullptr);
+  if (IsPointer<RightType>::RESULT) {
+    info = GetTypeInfoForType<decltype(*RightType(nullptr))>();
+  } else {
+    info = GetTypeInfoForType<RightType>();
+  }
+
+  const StructureTypeInfo *structure(
+      UnsafeCast<const StructureTypeInfo *>(info));
+  const StructureFieldInfo *field(structure->GetFieldInfoForName(field_name));
+
+  if (IsSymbolicValueReference<StructType>::RESULT) {
+    return SymbolicValueReference<OutputType>(GetRValue(context, obj), field);
+  } else {
+    return SymbolicValueReference<OutputType>(GetLValue(obj), field);
+  }
+}
+
+
+template <typename L>
+void ASSIGN_IMPL(mir::Context &context, SymbolicValueReference<L> left,
+                                        const mir::Symbol *right_conv) {
+  switch (left.kind) {
+    case SymbolicValueReferenceKind::MEMORY:
+      context.EmitInstruction(
+          mir::Operation::OP_STORE_MEMORY, {left.symbol, right_conv});
+      break;
+    case SymbolicValueReferenceKind::INDEX:
+    case SymbolicValueReferenceKind::FIELD:
+      context.EmitInstruction(
+          mir::Operation::OP_STORE_FIELD,
+          {left.symbol, left.meta.field_info, right_conv});
+  }
+}
+
+
+template <
+  typename L,
+  typename EnableIf<
+    IsSymbolicValueReference<L>::RESULT,
+    void,
+    int
+  >::Type = 0
+>
+void ASSIGN_IMPL(mir::Context &context, L &&left,
+                 const mir::Symbol *right_conv) {
+  context.EmitInstruction(
+      mir::Operation::OP_ASSIGN, {GetLValue(left), right_conv});
+}
+
+
 // Assign one value to another. If the left-hand side of the assignment is a
 // dereferenced address (symbolic value reference), then we emit a
 // `OP_STORE_MEMORY` instruction, otherwise we use a plain-old `OP_ASSIGN`
 // instruction.
 template <typename L, typename R>
 SymbolicValue<typename TypeOfSymbolicValue<L>::Type>
-inline ASSIGN(mir::Context &context, L &&left, R &&right) {
+ASSIGN(mir::Context &context, L &&left, R &&right) {
   typedef typename TypeOfSymbolicValue<L>::Type RefOutputType;
   typedef typename RemoveReference<RefOutputType>::Type OutputType;
 
@@ -244,17 +324,7 @@ inline ASSIGN(mir::Context &context, L &&left, R &&right) {
   const mir::Symbol *right_conv(context.EmitConvertType(
       output_type_info, GetRValue(context, right)));
 
-  // Storing through a memory reference.
-  if (IsSymbolicValueReference<L>::RESULT) {
-    context.EmitInstruction(
-        mir::Operation::OP_STORE_MEMORY, {GetLValue(left), right_conv});
-
-  // Assigning the value of an abstract register.
-  } else {
-    context.EmitInstruction(
-        mir::Operation::OP_ASSIGN, {GetLValue(left), right_conv});
-  }
-
+  ASSIGN_IMPL(context, left, right_conv);
   return SymbolicValue<OutputType>(right_conv);
 }
 

@@ -18,6 +18,16 @@ namespace pjit {
 namespace mir {
 
 
+enum SymbolBehavior : unsigned {
+  BehaviorLocal             = (1 << 0),
+  BehaviorGlobal            = (1 << 1),
+  BehaviorPersistent        = (1 << 2),
+  BehaviorProgramCounter    = (1 << 3) | BehaviorPersistent | BehaviorLocal,
+
+  BehaviorFieldAccess       = (1 << 20)
+};
+
+
 // Represents a symbol (e.g. an immediate constant, or a variable/register/
 // memory location) in the MIR.
 class Symbol {
@@ -45,8 +55,7 @@ class Symbol {
 
   // Note: Symbols with `id` zero are constants.
   unsigned id;
-  unsigned short num_uses;
-  unsigned short num_defs;
+  SymbolBehavior behavior;
 
   Symbol(const TypeInfo *type_, const char *name_, unsigned id_);
   Symbol(const TypeInfo *type_, void *pointer);
@@ -70,7 +79,8 @@ class Symbol {
   template <typename T>
   explicit Symbol(T *val)
       : type(GetTypeInfoForType<T *>()),
-        id(0) {
+        id(0),
+        behavior(SymbolBehavior::BehaviorLocal) {
     value.pointer = reinterpret_cast<void *>(
         const_cast<typename RemoveConst<T>::Type *>(val));
   }

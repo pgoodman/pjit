@@ -5,7 +5,7 @@ include ../Makefile.inc
 
 # Objects of the JIT to compile.
 PJIT_LANG_OBJS = 
-PJIT_LANG_OBJS += $(PJIT_BIN_DIR)/lang/main.o
+PJIT_LANG_OBJS += $(PJIT_BIN_DIR)/lang/basic-register-machine.o
 
 
 # Compile C++ files.

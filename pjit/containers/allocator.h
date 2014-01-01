@@ -21,8 +21,15 @@
 namespace pjit {
 
 
-/// Defines a simple, single-threaded allocator for a single kind of object. The
-/// size of the allocated object must be strictly less than a page.
+// Defines a simple, single-threaded allocator for a single kind of object. The
+// size of the allocated object must be strictly less than a page.
+//
+// TODO(pag): Eventually this should be improved. Some improvements that could
+//            be made without changing too much:
+//              1) Use a bitset instead of an array of `ObjectMetaData`.
+//              2) Merge the `full_pages` and `partial_pages`, so that full
+//                 pages are at the end of the list and partial pages are at
+//                 the beginning.
 template <typename T, unsigned kNumPages=1>
 class Allocator {
  public:
@@ -102,7 +109,8 @@ class Allocator {
 
   // Apply a visitor to every allocated object owned by this allocator.
   void Visit(typename VisitorFor<T>::Type *visitor) {
-
+    VisitPageList(full_pages, visitor);
+    VisitPageList(partial_pages, visitor);
   }
 
  private:
@@ -325,6 +333,18 @@ class Allocator {
       for (unsigned i(0); i < NUM_OBJECTS; ++i) {
         if (page->status[i].is_allocated) {
           page->status[i].is_reachable = false;
+        }
+      }
+    }
+  }
+
+  // Apply a visitor to every allocated object owned by this allocator.
+  void VisitPageList(PageMetaData *page,
+                     typename VisitorFor<T>::Type *visitor) {
+    for (; nullptr != page; page = page->next) {
+      for (unsigned i(0); i < NUM_OBJECTS; ++i) {
+        if (page->status[i].is_allocated) {
+          visitor->Visit(&(page->objects[i]));
         }
       }
     }

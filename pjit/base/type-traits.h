@@ -31,6 +31,18 @@ struct RemoveReference<T &&> {
 };
 
 
+template <typename T>
+struct RemovePointer {
+  typedef T Type;
+};
+
+
+template <typename T>
+struct RemovePointer<T *> {
+  typedef T Type;
+};
+
+
 template <const bool Condition, typename TrueType, typename FalseType=void>
 struct EnableIf;
 

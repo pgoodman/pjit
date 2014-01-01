@@ -57,6 +57,15 @@
 #define PJIT_TO_STRING2(a) PJIT_TO_STRING3(a)
 #define PJIT_TO_STRING(a) PJIT_TO_STRING2(a)
 
+
 #define PJIT_UNUSED(a) (void) (a)
+
+
+// Determine the number of arguments in a variadic macro argument pack.
+// Taken from: http://efesx.com/2010/07/17/
+// variadic-macro-to-count-number-of-arguments/#comment-256
+#define PJIT_NUM_PARAMS(...) \
+  PJIT_NUM_PARAMS_IMPL(, ##__VA_ARGS__,7,6,5,4,3,2,1,0)
+#define PJIT_NUM_PARAMS_IMPL(_0,_1,_2,_3,_4,_5,_6,_7,N,...) N
 
 #endif  // PJIT_BASE_BASE_H_

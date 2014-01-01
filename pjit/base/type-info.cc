@@ -8,6 +8,7 @@
 
 
 #include "pjit/base/type-info.h"
+#include "pjit/base/cstring.h"
 
 
 #define PJIT_DEFINE_BASIC_TYPE_INFO(type, kind) \
@@ -31,6 +32,18 @@
 
 
 namespace pjit {
+
+
+const StructureFieldInfo *
+StructureTypeInfo::GetFieldInfoForName(const char *name) const {
+  for (unsigned i(0); i < num_fields; ++i) {
+    const StructureFieldInfo *field(&(fields[i]));
+    if (CStringsAreEqual(field->name, name)) {
+      return field;
+    }
+  }
+  return nullptr;
+}
 
 
 PJIT_DEFINE_CUSTOM_TYPE_INFO(

@@ -12,6 +12,8 @@
 
 namespace pjit {
 
+struct StructureFieldInfo;
+
 namespace mir {
 class Symbol;
 }  // namespace mir
@@ -24,12 +26,7 @@ namespace hir {
 // class template.
 template <typename T>
 class SymbolicValue {
- private:
-
-  const mir::Symbol *symbol;
-
  public:
-
   inline SymbolicValue(void)
       : symbol(nullptr) {}
 
@@ -43,6 +40,16 @@ class SymbolicValue {
   inline const mir::Symbol *GetSymbol(void) const {
     return symbol;
   }
+
+ private:
+  const mir::Symbol *symbol;
+};
+
+
+enum class SymbolicValueReferenceKind {
+  MEMORY,
+  FIELD,
+  INDEX
 };
 
 
@@ -51,20 +58,37 @@ class SymbolicValue {
 // or an l-value.
 template <typename T>
 class SymbolicValueReference {
- private:
-
-  const mir::Symbol *symbol;
-
-  SymbolicValueReference(void) = delete;
-
  public:
+  const mir::Symbol * const symbol;
+  const SymbolicValueReferenceKind kind;
+  const union MetaInfo {
+    int array_index;
+    const StructureFieldInfo *field_info;
 
-  inline explicit SymbolicValueReference(const mir::Symbol *value)
-      : symbol(value) {}
+    MetaInfo(int index)
+        : array_index(index) {}
 
-  inline const mir::Symbol *GetSymbol(void) const {
-    return symbol;
-  }
+    MetaInfo(const StructureFieldInfo *info)
+        : field_info(info) {}
+  } meta;
+
+  explicit SymbolicValueReference(const mir::Symbol *value)
+      : symbol(value),
+        kind(SymbolicValueReferenceKind::MEMORY),
+        meta(0) {}
+
+  SymbolicValueReference(const mir::Symbol *value, unsigned array_index)
+      : symbol(value),
+        kind(SymbolicValueReferenceKind::INDEX),
+        meta(array_index) {}
+
+  SymbolicValueReference(const mir::Symbol *value, const StructureFieldInfo *field)
+      : symbol(value),
+        kind(SymbolicValueReferenceKind::INDEX),
+        meta(field) {}
+
+ private:
+  SymbolicValueReference(void) = delete;
 };
 
 }  // namespace hir

@@ -17,6 +17,7 @@
 namespace pjit {
 
 struct TypeInfo;
+struct StructureFieldInfo;
 
 namespace mir {
 
@@ -34,9 +35,25 @@ enum class Operation {
 #undef PJIT_DECLARE_UNARY_OPERATOR
   OP_LOAD_MEMORY,
   OP_STORE_MEMORY,
+  OP_LOAD_FIELD,
+  OP_STORE_FIELD,
   OP_CONVERT_TYPE,
   OP_ASSIGN,
-  OP_NOP
+
+  OP_CCALL1,
+  OP_CCALL2,
+  OP_CCALL3,
+
+  // Tail-call to the next instruction decode cycle. The values of the
+  // variables marked as persistent will be guaranteed to be available to
+  // the next iteration of instruction fetch / decode / execute.
+  OP_NEXT
+};
+
+
+union Operand {
+  const Symbol *symbol;
+  const StructureFieldInfo *field;
 };
 
 
@@ -51,13 +68,13 @@ class Instruction {
   Instruction *prev;
   Instruction *next;
 
-  const Symbol *operands[kMaxNumOperands];
+  Operand operands[kMaxNumOperands];
 
-  inline Instruction(Operation op, std::initializer_list<const Symbol *> ops)
+  inline Instruction(Operation op, std::initializer_list<const void *> ops)
       : operation(op),
         prev(nullptr),
         next(nullptr) {
-    memcpy(&(operands[0]), ops.begin(), ops.size() * sizeof(const Symbol *));
+    memcpy(&(operands[0]), ops.begin(), ops.size() * sizeof(const void *));
   }
 
   Instruction(void) = delete;

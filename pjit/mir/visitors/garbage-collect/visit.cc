@@ -60,8 +60,9 @@ void GarbageCollectionVisitor::VisitPreOrder(BasicBlock *bb) {
   for (Instruction *in(bb->first); nullptr != in; in = in->next) {
     context->instruction_allocator.MarkReachable(in);
     for (unsigned i(0); i < Instruction::kMaxNumOperands; ++i) {
-      if (in->operands[i]) {
-        context->symbol_allocator.MarkReachable(in->operands[i]);
+      if (in->operands[i].symbol &&
+          context->symbol_allocator.OwnsObject(in->operands[i].symbol)) {
+        context->symbol_allocator.MarkReachable(in->operands[i].symbol);
       }
     }
   }

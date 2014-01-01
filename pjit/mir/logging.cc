@@ -112,7 +112,33 @@ int Log(LogLevel level, const mir::Context *context) {
 static int Log(LogLevel level, const PointerTypeInfo *type) {
   int num_logged_bytes(0);
   num_logged_bytes += Log(level, type->pointed_to_type);
-  num_logged_bytes += Log(level, "%s", type->info.name);
+  num_logged_bytes += Log(level, "*");
+  return num_logged_bytes;
+}
+
+
+// Log a pointer type.
+static int Log(LogLevel level, const ArrayTypeInfo *type) {
+  int num_logged_bytes(0);
+  num_logged_bytes += Log(level, type->pointed_to_type);
+  num_logged_bytes += Log(level, "[%u]", type->num_elements);
+  return num_logged_bytes;
+}
+
+
+// Log a structure type.
+static int Log(LogLevel level, const StructureTypeInfo *type) {
+  int num_logged_bytes(0);
+  num_logged_bytes += Log(level, "{");
+  for (unsigned i(0); i < type->num_fields; ++i) {
+    if (i) {
+      num_logged_bytes += Log(level, ", ");
+    }
+
+    num_logged_bytes += Log(level, "%s:", type->fields[i].name);
+    num_logged_bytes += Log(level, type->fields[i].type);
+  }
+  num_logged_bytes += Log(level, "}");
   return num_logged_bytes;
 }
 
@@ -120,6 +146,10 @@ static int Log(LogLevel level, const PointerTypeInfo *type) {
 // Log a function type.
 static int Log(LogLevel level, const FunctionTypeInfo *type) {
   int num_logged_bytes(0);
+  PJIT_UNUSED(level);
+  PJIT_UNUSED(type);
+  return num_logged_bytes;
+#if 0
   num_logged_bytes += Log(level, type->return_type);
   num_logged_bytes += Log(level, "(*)(");
   for (unsigned i(0); i < type->num_arguments; ++i) {
@@ -130,6 +160,7 @@ static int Log(LogLevel level, const FunctionTypeInfo *type) {
   }
   num_logged_bytes += Log(level, ")");
   return num_logged_bytes;
+#endif
 }
 
 
@@ -145,6 +176,9 @@ int Log(LogLevel level, const TypeInfo *type) {
     case TypeKind::TYPE_KIND_POINTER:
       return Log(level, UnsafeCast<const PointerTypeInfo *>(type));
 
+    case TypeKind::TYPE_KIND_ARRAY:
+      return Log(level, UnsafeCast<const ArrayTypeInfo *>(type));
+
     case TypeKind::TYPE_KIND_FUNCTION: {
       return Log(level, UnsafeCast<const FunctionTypeInfo *>(type));
       break;
@@ -152,7 +186,11 @@ int Log(LogLevel level, const TypeInfo *type) {
 
     case TypeKind::TYPE_KIND_STRUCTURE:
     case TypeKind::TYPE_KIND_UNION:
-      break;
+      if (type->name && '\0' != type->name[0]) {
+        return Log(level, "%s", type->name);
+      } else {
+        return Log(level, UnsafeCast<const StructureTypeInfo *>(type));
+      }
   }
   return 0;
 }
@@ -194,6 +232,7 @@ static int LogConstant(LogLevel level, const mir::Symbol *sym) {
     case TypeKind::TYPE_KIND_UNDEFINED:
     case TypeKind::TYPE_KIND_STRUCTURE:
     case TypeKind::TYPE_KIND_UNION:
+    case TypeKind::TYPE_KIND_ARRAY:
       return Log(level, "???:");
   }
   return 0;
@@ -215,7 +254,7 @@ int Log(LogLevel level, const mir::Symbol *sym) {
         level, "%s:", sym->value.name);
   } else {
     num_logged_bytes += Log(
-        level, "$%u:", sym->id);
+        level, "%%%u:", sym->id);
   }
   num_logged_bytes += Log(level, sym->type);
 
@@ -247,12 +286,29 @@ int Log(LogLevel level, const mir::Instruction *in) {
 #undef PJIT_DECLARE_BINARY_OPERATOR
 #undef PJIT_DECLARE_UNARY_OPERATOR
     case mir::Operation::OP_LOAD_MEMORY: {
-      op_symbol = " = deref ";
+      op_symbol = " = load ";
       goto two_operands;
     }
     case mir::Operation::OP_STORE_MEMORY: {
-      op_symbol = " <- ";
+      num_logged_bytes += Log(level, "store ");
+      op_symbol = ", ";
       goto two_operands;
+    }
+    case mir::Operation::OP_LOAD_FIELD: {
+      num_logged_bytes += Log(level, in->operands[0].symbol);
+      num_logged_bytes += Log(level, " = ");
+      num_logged_bytes += Log(level, in->operands[1].symbol);
+      num_logged_bytes += Log(level, ".");
+      num_logged_bytes += Log(level, "%s", in->operands[2].field->name);
+      goto done;
+    }
+    case mir::Operation::OP_STORE_FIELD: {
+      num_logged_bytes += Log(level, in->operands[0].symbol);
+      num_logged_bytes += Log(level, ".");
+      num_logged_bytes += Log(level, "%s = ", in->operands[1].field->name);
+      num_logged_bytes += Log(level, in->operands[2].symbol);
+
+      goto done;
     }
     case mir::Operation::OP_CONVERT_TYPE: {
       op_symbol = " convert ";
@@ -269,18 +325,18 @@ int Log(LogLevel level, const mir::Instruction *in) {
   }
 
   two_operands:
-  num_logged_bytes += Log(level, in->operands[0]);
+  num_logged_bytes += Log(level, in->operands[0].symbol);
   num_logged_bytes += Log(level, "%s", op_symbol);
-  num_logged_bytes += Log(level, in->operands[1]);
+  num_logged_bytes += Log(level, in->operands[1].symbol);
   num_logged_bytes += Log(level, ";");
   goto done;
 
   three_operands:
-  num_logged_bytes += Log(level, in->operands[0]);
+  num_logged_bytes += Log(level, in->operands[0].symbol);
   num_logged_bytes += Log(level, " = ");
-  num_logged_bytes += Log(level, in->operands[1]);
+  num_logged_bytes += Log(level, in->operands[1].symbol);
   num_logged_bytes += Log(level, "%s", op_symbol);
-  num_logged_bytes += Log(level, in->operands[2]);
+  num_logged_bytes += Log(level, in->operands[2].symbol);
   num_logged_bytes += Log(level, ";");
 
   done:

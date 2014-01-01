@@ -13,14 +13,16 @@ namespace mir {
 
 Symbol::Symbol(const TypeInfo *type_, const char *name_, unsigned id_)
     : type(type_),
-      id(id_) {
+      id(id_),
+      behavior(SymbolBehavior::BehaviorLocal) {
   value.name = name_;
 }
 
 
 Symbol::Symbol(const TypeInfo *type_, void *pointer)
     : type(type_),
-      id(0) {
+      id(0),
+      behavior(SymbolBehavior::BehaviorLocal) {
   value.pointer = pointer;
 }
 
@@ -28,7 +30,8 @@ Symbol::Symbol(const TypeInfo *type_, void *pointer)
 #define PJIT_DEFINE_SYMBOL_CONSTRUCTOR(type_name, field) \
   Symbol::Symbol(type_name val) \
       : type(GetTypeInfoForType<type_name>()), \
-        id(0) { \
+        id(0), \
+        behavior(SymbolBehavior::BehaviorLocal) { \
     value.field = val; \
   }
 

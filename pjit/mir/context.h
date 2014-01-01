@@ -70,7 +70,7 @@ class Context {
 
   // Create and emit an instruction to the current basic block.
   void EmitInstruction(Operation op,
-                       std::initializer_list<const Symbol *> args);
+                       std::initializer_list<const void *> args);
 
   const Symbol *EmitConvertType(const TypeInfo *to_type,
                                 const Symbol *from_value);
@@ -78,6 +78,10 @@ class Context {
   void VisitPreOrder(ControlFlowGraphVisitor *visitor);
   void VisitPostOrder(ControlFlowGraphVisitor *visitor);
   void GarbageCollect(void);
+
+  inline void VisitSymbols(VisitorFor<Symbol>::Type *visitor) {
+    symbol_allocator.Visit(visitor);
+  }
 
  private:
   friend class hir::IfStatementBuilder;

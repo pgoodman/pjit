@@ -42,7 +42,7 @@ Symbol *Context::CopySymbol(const Symbol *that) {
 
 
 void Context::EmitInstruction(Operation op,
-                              std::initializer_list<const Symbol *> args) {
+                              std::initializer_list<const void *> args) {
   current->Append(instruction_allocator.Allocate(op, args));
 }
 
